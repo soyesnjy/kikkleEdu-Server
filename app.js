@@ -177,7 +177,7 @@ app.use("/kakaopay", kakaoPayRouter);
 
 // app.listen(PORT, () => console.log(`🚀 HTTP Server is starting on ${PORT}`));
 
-console.log("Kikkle 서버 Start!");
+console.log("Kikkle 서버 Start~!");
 // https 보안 파일이 있을 경우
 if (
   fs.existsSync("/etc/letsencrypt/live/soyeskids.co.kr/fullchain.pem") &&
