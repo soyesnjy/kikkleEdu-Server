@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cors 에러 확인용 페이지</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+      }
+      .roomContainer {
+        display: flex;
+        gap: 20px;
+      }
+      .room {
+        display: flex;
+        background-color: #007bff;
+        color: white;
+        padding: 1rem;
+        cursor: pointer;
+      }
+      .chat-container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+      }
+      .chat-box {
+        height: 400px;
+        overflow-y: scroll;
+        border: 1px solid #ddd;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+      }
+      .chattingDiv {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: left;
+      }
+      .message {
+        margin-bottom: 10px;
+        max-width: 250px;
+      }
+      .user-message {
+        background-color: #e0f2f1;
+        padding: 5px 10px;
+        border-radius: 5px;
+      }
+      .other-message {
+        background-color: #f0f0f0;
+        padding: 5px 10px;
+        border-radius: 5px;
+      }
+      .input-box {
+        display: flex;
+        margin-top: 10px;
+      }
+      .input-box input {
+        flex-grow: 1;
+        padding: 5px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+      }
+      .input-box button {
+        background-color: #007bff;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        padding: 5px 10px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- <div id="container">
+        <label>동물 이름을 영어로 입력하세요</label>
+        <input id="name" value="">
+        <button onclick="submitHandler()">submit</button>
+    </div>
+    <h1 id="board">동물 울음소리</h1> -->
+
+    <!-- <div id="container">
+        <h4>버튼을 누르세요</h4>
+        <button onclick="errorHandler('cur')">Current</button>
+        <button onclick="errorHandler('next')">Next</button>
+        <button onclick="errorHandler('err')">Error</button>
+    </div>
+    <h1 id="board2">에러 메세지</h1> -->
+
+    <div id="container">
+      <h3>Login 정보를 입력하세요</h3>
+      <label>id</label>
+      <input id="id" value="" />
+      <label>pwd</label>
+      <input id="pwd" value="" type="password" />
+      <button onclick="loginHandler()">Login</button>
+      <button onclick="logoutHandler()">LogOut</button>
+    </div>
+    <h1 id="board3"></h1>
+
+    <!-- <div id="container">
+      <h1 id="board4">전체 채팅방</h1>
+      <div>
+        <label>닉네임</label>
+        <input id="nickname" value="" />
+      </div>
+      <div class="wrapper"></div>
+      <div>
+        <label>채팅</label>
+        <input id="chat" value="" />
+      </div>
+      <button onclick="msgHandler()">전송</button>
+    </div>
+
+    <div id="container">
+      <h1 id="board5">1:1 채팅방</h1>
+      <div>
+        <label>받는 사람</label>
+        <input id="receiver" value="" />
+      </div>
+      <div>
+        <label>닉네임</label>
+        <input id="nickname2" value="" />
+      </div>
+      <div class="wrapper2"></div>
+      <div>
+        <label>채팅</label>
+        <input id="chat2" value="" />
+      </div>
+      <button onclick="msgHandler2()">전송</button>
+    </div> -->
+
+    <div id="container">
+      <h1 id="board5">그룹 채팅방</h1>
+      <div id="groupChatRoom">
+        <!-- <label>방 이름</label>
+        <input id="roomName" value="" />
+        <button onclick="createRoomHander()">방 만들기</button> -->
+        <button onclick="fixHander()">방 인원수 초기화</button>
+      </div>
+      <div class="roomContainer"></div>
+      <div class="chatContainer"></div>
+    </div>
+  </body>
+  <script
+    src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.1/socket.io.js"
+    integrity="sha512-Z6C1p1NIexPj5MsVUunW4pg7uMX6/TT3CUVldmjXx2kpip1eZcrAnxIusDxyFIikyM9A61zOVNgvLr/TGudOQg=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  ></script>
+  <script src="./index.js"></script>
+</html>
