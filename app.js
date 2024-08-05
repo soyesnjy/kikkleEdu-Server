@@ -12,8 +12,8 @@ const helmet = require("helmet");
 // const redisStore = require("./DB/redisClient");
 
 const app = express();
-const PORT = 4000;
-const PORT_https = 4040;
+const PORT = 6000;
+const PORT_https = 6060;
 
 // 서버와 동일한 url을 브라우저에 입력하면 src 폴더 내부의 html 파일 실행.
 const path = require("path");
@@ -88,26 +88,6 @@ app.use(compression());
 // };
 // app.use(responseBodyLogger);
 
-// Helmet을 사용하여 Content Security Policy(CSP) 설정
-// app.use(
-//   helmet({
-//     contentSecurityPolicy: {
-//       directives: {
-//         defaultSrc: ["'self'"],
-//         scriptSrc: ["'self'"],
-//         styleSrc: ["'self'"],
-//         imgSrc: ["'self'", "https://drive.google.com"],
-//         mediaSrc: [
-//           "'self'",
-//           "https://drive.google.com",
-//           "https://drive.usercontent.google.com",
-//         ],
-//         connectSrc: ["'self'"],
-//         frameSrc: ["'self'", "https://drive.google.com"],
-//       },
-//     },
-//   })
-// );
 app.use(
   helmet.contentSecurityPolicy({
     directives: {
@@ -151,32 +131,33 @@ app.use("/directory", directoryRouter);
 
 // Tips
 // 채팅 웹소켓 서버 라우팅
-const chatRouter = require("./router/chat");
-app.use(chatRouter);
-// 유니티 채팅 웹소켓 서버 라우팅
-const unityChatRouter = require("./router/unityChat");
-app.use(unityChatRouter);
-// 유니티 채팅 웹소켓 서버 라우팅2
-const unityChatRouter2 = require("./router/unityChat2");
-app.use(unityChatRouter2);
-// 유니티 채팅 웹소켓 서버 라우팅3
-const unityChatRouter3 = require("./router/unityChat3");
-app.use(unityChatRouter3);
-// 유니티 채팅 웹소켓 서버 라우팅4
-const unityChatRouter4 = require("./router/unityChat4");
-app.use(unityChatRouter4);
-// 유니티 채팅 웹소켓 서버 라우팅5
-const unityChatRouter5 = require("./router/unityChat5");
-app.use(unityChatRouter5);
+// const chatRouter = require("./router/chat");
+// app.use(chatRouter);
+// // 유니티 채팅 웹소켓 서버 라우팅
+// const unityChatRouter = require("./router/unityChat");
+// app.use(unityChatRouter);
+// // 유니티 채팅 웹소켓 서버 라우팅2
+// const unityChatRouter2 = require("./router/unityChat2");
+// app.use(unityChatRouter2);
+// // 유니티 채팅 웹소켓 서버 라우팅3
+// const unityChatRouter3 = require("./router/unityChat3");
+// app.use(unityChatRouter3);
+// // 유니티 채팅 웹소켓 서버 라우팅4
+// const unityChatRouter4 = require("./router/unityChat4");
+// app.use(unityChatRouter4);
+// // 유니티 채팅 웹소켓 서버 라우팅5
+// const unityChatRouter5 = require("./router/unityChat5");
+// app.use(unityChatRouter5);
 // test 경로 라우팅
-const testRouter = require("./router/test");
-app.use("/test", testRouter);
-// agoraToken 경로 라우팅
-const agoraTokenRouter = require("./router/agoraToken");
-app.use("/agoraToken", agoraTokenRouter);
+// const testRouter = require("./router/test");
+// app.use("/test", testRouter);
+// // agoraToken 경로 라우팅
+// const agoraTokenRouter = require("./router/agoraToken");
+// app.use("/agoraToken", agoraTokenRouter);
 
 // AI
 // openAI 경로 라우팅
+
 const openAIRouter = require("./router/openAI");
 app.use("/openAI", openAIRouter);
 const reviewRouter = require("./router/review");
@@ -196,7 +177,7 @@ app.use("/kakaopay", kakaoPayRouter);
 
 // app.listen(PORT, () => console.log(`🚀 HTTP Server is starting on ${PORT}`));
 
-console.log("Soyes 종합 서버 Start");
+console.log("Kikkle 서버 Start");
 // https 보안 파일이 있을 경우
 if (
   fs.existsSync("/etc/letsencrypt/live/soyeskids.co.kr/fullchain.pem") &&
