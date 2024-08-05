@@ -527,6 +527,7 @@ const loginController = {
   postAILoginHandler: async (req, res) => {
     const { LoginData } = req.body;
     let parseLoginData;
+
     try {
       // 입력값 파싱
       if (typeof LoginData === "string") {

@@ -12,7 +12,7 @@ const helmet = require("helmet");
 // const redisStore = require("./DB/redisClient");
 
 const app = express();
-const PORT = 6000;
+const PORT = 6001;
 const PORT_https = 6060;
 
 // 서버와 동일한 url을 브라우저에 입력하면 src 폴더 내부의 html 파일 실행.
@@ -28,6 +28,7 @@ app.use(
       "https://soyes-ai-project.vercel.app",
       "https://www.soyeskids.store",
       "http://localhost:3000",
+      "http://localhost:3001",
       // "http://127.0.0.1:53298",
       // "http://d1rq5xi9hzhyrc.cloudfront.net",
       // "http://soyes.chatbot.s3-website.ap-northeast-2.amazonaws.com",
@@ -109,7 +110,7 @@ app.use(
 );
 
 app.get("/", (req, res) => {
-  res.status(200).json({ text: "Hello World!" });
+  res.status(200).json({ text: "Hello Kikkle!" });
 });
 
 // Tips, AI 공통

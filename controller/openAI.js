@@ -2322,19 +2322,19 @@ Todo List가 아니라고 판단되면 제외한다.
   },
   // User 정서행동 검사 결과 반환
   postOpenAIUserEBTResultData: async (req, res) => {
-    const { EBTData } = req.body;
-    let parseEBTdata,
+    const { data } = req.body;
+    let parseData,
       parsepUid,
       // returnObj = {},
       returnArr = [];
 
     try {
       // json 파싱
-      if (typeof EBTData === "string") {
-        parseEBTdata = JSON.parse(EBTData);
-      } else parseEBTdata = EBTData;
+      if (typeof data === "string") {
+        parseData = JSON.parse(data);
+      } else parseData = data;
 
-      const { pUid, contentKey } = parseEBTdata;
+      const { pUid, contentKey } = parseData;
       // No pUid => return
       if (!pUid) {
         console.log("No pUid input value - 400");
