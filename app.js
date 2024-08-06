@@ -26,6 +26,7 @@ app.use(
     origin: [
       "https://soyeskids.co.kr:4040",
       "https://soyes-ai-project.vercel.app",
+      "https://kikkle-edu.vercel.app",
       "https://www.soyeskids.store",
       "http://localhost:3000",
       "http://localhost:3001",
