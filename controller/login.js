@@ -1000,6 +1000,8 @@ const loginController = {
   },
 };
 
+// jenkins 배포용 주석
+
 const loginController_Regercy = {
   // 쿠키 유효성 검사
   vaildateCookies: (req, res, next) => {
