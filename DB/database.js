@@ -29,8 +29,16 @@ const dbconfig_ai = {
   database: "soyesAI",
 };
 
+const dbconfig_kk = {
+  host: process.env.DATABASE_HOST,
+  user: "admin",
+  password: process.env.DATABASE_PASSWORD,
+  database: "soyesKK",
+};
+
 module.exports = {
   users,
   dbconfig,
   dbconfig_ai,
+  dbconfig_kk,
 };

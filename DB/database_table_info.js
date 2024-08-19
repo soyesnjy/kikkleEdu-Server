@@ -353,6 +353,47 @@ const Ella_Training_Table_Info = {
     },
   },
 };
+
+// 키클 에듀 DB Table Info
+const KK_User_Table_Info = {
+  teacher: {
+    table: "kk_teacher",
+    attribute: {
+      pKey: "kk_teacher_idx",
+      attr1: "kk_teacher_uid",
+      attr2: "kk_teacher_pwd",
+      attr3: "kk_teacher_introduction",
+      attr4: "kk_teacher_name",
+      attr5: "kk_teacher_phoneNum",
+      attr6: "kk_teacher_profileImg_path",
+      attr7: "kk_teacher_location",
+      attr8: "kk_teacher_dayofweek",
+      attr9: "kk_teacher_history",
+      attr10: "kk_teacher_education",
+      attr11: "kk_teacher_file_path",
+      attr12: "kk_teacher_approve_status",
+      attr13: "kk_teacher_created_at",
+      attr14: "kk_teacher_updated_at",
+    },
+  },
+  agency: {
+    table: "kk_agency",
+    attribute: {
+      pKey: "kk_agency_idx",
+      attr1: "kk_agency_uid",
+      attr2: "kk_agency_pwd",
+      attr4: "kk_agency_name",
+      attr5: "kk_agency_address",
+      attr7: "kk_agency_phoneNum",
+      attr8: "kk_agency_type",
+      attr9: "kk_agency_file_path",
+      attr10: "kk_agency_approve_status",
+      attr11: "kk_agency_created_at",
+      attr12: "kk_agency_updated_at",
+    },
+  },
+};
+
 module.exports = {
   User_Table_Info,
   Plan_Table_Info,
@@ -361,4 +402,5 @@ module.exports = {
   Consult_Table_Info,
   Review_Table_Info,
   Ella_Training_Table_Info,
+  KK_User_Table_Info,
 };
