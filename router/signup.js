@@ -7,13 +7,13 @@ const {
   signupController_Regercy,
 } = require("../controller/signup");
 const { postSignupAIHandler } = signupController;
-const { dupleCheckHandler, signupHandler } = signupController_Regercy;
 
-router.post("/", signupHandler);
-router.post("/duplecheck", dupleCheckHandler);
+// const { dupleCheckHandler, signupHandler } = signupController_Regercy;
+// router.post("/", signupHandler);
+// router.post("/duplecheck", dupleCheckHandler);
 
 // AI 프로젝트용 회원가입 컨트롤러
-router.post("/ai", postSignupAIHandler);
+router.post("/kk", postSignupAIHandler);
 
 // 에러 메세지 처리
 router.use(errController.errMessageHandler);

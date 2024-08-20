@@ -115,7 +115,6 @@ app.get("/", (req, res) => {
   res.status(200).json({ text: "Hello Kikkle!" });
 });
 
-// Tips, AI 공통
 // path 경로 라우팅
 const pathRouter = require("./router/path");
 app.use("/path", pathRouter);
@@ -132,41 +131,18 @@ app.use("/signup", signupRouter);
 const directoryRouter = require("./router/directory");
 app.use("/directory", directoryRouter);
 
-// Tips
-// 채팅 웹소켓 서버 라우팅
-// const chatRouter = require("./router/chat");
-// app.use(chatRouter);
-// // 유니티 채팅 웹소켓 서버 라우팅
-// const unityChatRouter = require("./router/unityChat");
-// app.use(unityChatRouter);
-// // 유니티 채팅 웹소켓 서버 라우팅2
-// const unityChatRouter2 = require("./router/unityChat2");
-// app.use(unityChatRouter2);
-// // 유니티 채팅 웹소켓 서버 라우팅3
-// const unityChatRouter3 = require("./router/unityChat3");
-// app.use(unityChatRouter3);
-// // 유니티 채팅 웹소켓 서버 라우팅4
-// const unityChatRouter4 = require("./router/unityChat4");
-// app.use(unityChatRouter4);
-// // 유니티 채팅 웹소켓 서버 라우팅5
-// const unityChatRouter5 = require("./router/unityChat5");
-// app.use(unityChatRouter5);
-// test 경로 라우팅
-// const testRouter = require("./router/test");
-// app.use("/test", testRouter);
-// // agoraToken 경로 라우팅
-// const agoraTokenRouter = require("./router/agoraToken");
-// app.use("/agoraToken", agoraTokenRouter);
-
 // AI
 // openAI 경로 라우팅
-
 const openAIRouter = require("./router/openAI");
 app.use("/openAI", openAIRouter);
 const reviewRouter = require("./router/review");
 app.use("/review", reviewRouter);
 const kakaoPayRouter = require("./router/kakaoPay");
 app.use("/kakaopay", kakaoPayRouter);
+
+// KK 수업 관련 Router
+const ClassRouter = require("./router/class");
+app.use("/class", ClassRouter);
 
 // MailTest 경로 라우팅
 // const mailTestRouter = require("./router/mailTest");
