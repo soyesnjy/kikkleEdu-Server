@@ -109,17 +109,20 @@ const signupController = {
 
       const {
         // 강사 회원가입 데이터
-        pUid,
-        type,
-        passWord,
-        name,
-        phoneNumber,
-        possLocal,
-        possDay,
-        possClass,
-        career,
-        education,
-        file,
+        pUid, // uid 공통
+        userClass, // teacher || agency
+        passWord, // pwd 공통
+        name, // 이름 공통
+        phoneNumber, // 전화번호 공통
+        possLocal, // 강사 수업 가능 지역
+        possDay, // 강사 수업 가능 요일
+        possClass, // 강사 가능 수업
+        career, // 강사 경력
+        education, // 강사 학력
+        fileData, // 첨부파일 공통
+        // 기관 회원가입 데이터
+        address, // 기관 주소
+        typeA, // 기관 타입
       } = parseSignUpData;
 
       // Input 없을 경우
@@ -129,11 +132,8 @@ const signupController = {
           .json({ message: "Non Sign Up Input Value - 400 Bad Request" });
       }
 
-      const [baseType, zipBase64] = file.split(",");
-      const bufferStream = new stream.PassThrough();
-      bufferStream.end(Buffer.from(zipBase64, "base64"));
-
       parsepUid = pUid;
+
       // 입력값이 한글일 경우
       // if (regex.test(pUid) || regex.test(passWard)) {
       //   return res
@@ -141,20 +141,10 @@ const signupController = {
       //     .json({ message: "Non Korean Input Value - 400 Bad Request" });
       // }
 
-      const user_table = KK_User_Table_Info[type].table;
-      const user_attribute = KK_User_Table_Info[type].attribute;
-
-      // 오늘 날짜 변환
-      const dateObj = new Date();
-      const year = dateObj.getFullYear();
-      const month = ("0" + (dateObj.getMonth() + 1)).slice(-2);
-      const day = ("0" + dateObj.getDate()).slice(-2);
-      const date = `${year}-${month}-${day}`;
+      const user_table = KK_User_Table_Info[userClass].table;
+      const user_attribute = KK_User_Table_Info[userClass].attribute;
 
       // 1. SELECT TEST (row가 있는지 없는지 검사)
-      // User 계정 DB SELECT Method. uid를 입력값으로 받음
-      // const user_data = await user_ai_select(user_table, user_attribute, pUid);
-
       const user_data = await user_kk_select(
         user_table,
         user_attribute,
@@ -171,69 +161,207 @@ const signupController = {
       }
       // 3. INSERT USER (row가 없는 경우). 중복 검사 통과
       else {
-        delete user_attribute.pKey;
-        delete user_attribute.attr13;
-        delete user_attribute.attr14;
+        if (userClass === "teacher") {
+          // 첨부파일 Google Drive 저장
+          const { fileName, fileType, baseData } = fileData;
+          const [baseType, zipBase64] = baseData.split(",");
+          const bufferStream = new stream.PassThrough();
+          bufferStream.end(Buffer.from(zipBase64, "base64"));
 
-        const insert_query = `INSERT INTO ${user_table} (${Object.values(
-          user_attribute
-        ).join(", ")}) VALUES (${Object.values(user_attribute)
-          .map((el) => "?")
-          .join(", ")})`;
-        // console.log(insert_query);
+          const fileMetadata = {
+            name: fileName,
+          };
 
-        // INSERT Value 명시
-        const insert_value_obj = {
-          attr1: pUid,
-          attr2: passWord,
-          attr3: "",
-          attr4: name,
-          attr5: phoneNumber,
-          attr6: "",
-          attr7: possLocal,
-          attr8: possDay.sort((a, b) => a - b).join("/"),
-          attr9: career,
-          attr10: education,
-          attr11: "",
-          attr12: 0,
-        };
-        // console.log(insert_value);
+          const media = {
+            mimeType: fileType,
+            body: bufferStream,
+          };
 
-        // 계정 생성 (비동기 처리)
-        connection_KK.query(
-          insert_query,
-          Object.values(insert_value_obj),
-          (error, rows, fields) => {
-            if (error) {
-              console.log(error);
-              res.status(400).json({ message: error.sqlMessage });
-            } else {
-              // console.log(rows);
-              const teacher_id = rows.insertId; // 삽입한 강사의 pKey
-              const table = KK_User_Table_Info["teacher_class"].table;
-              const attribute = KK_User_Table_Info["teacher_class"].attribute;
-              const insert_query = `INSERT INTO ${table} (${attribute.attr1}, ${
-                attribute.attr2
-              }) VALUES ${possClass
-                .map((el) => {
-                  return `(${teacher_id}, ${el})`;
-                })
-                .join(", ")}`;
+          // 파일 업로드
+          const file = await drive.files.create({
+            resource: fileMetadata,
+            media: media,
+            fields: "id, webViewLink, webContentLink",
+          });
 
-              connection_KK.query(insert_query, null, (err) => {
-                if (error) {
-                  console.log(error);
-                  res.status(400).json({ message: error.sqlMessage });
-                } else {
-                  console.log("Guest User Row DB INSERT Success!");
-                  res
-                    .status(200)
-                    .json({ message: "User SignUp Success! - 200 OK" });
-                }
-              });
+          // 파일을 Public으로 설정
+          await drive.permissions.create({
+            fileId: file.data.id,
+            requestBody: {
+              role: "reader",
+              type: "anyone",
+            },
+          });
+
+          // soyesnjy@gmail.com 계정에게 파일 공유 설정 (writer 권한)
+          await drive.permissions.create({
+            fileId: file.data.id,
+            requestBody: {
+              role: "writer",
+              type: "user",
+              emailAddress: "soyesnjy@gmail.com",
+            },
+            // transferOwnership: true, // role:'owner' 일 경우
+          });
+
+          // Public URL을 가져오기 위해 파일 정보를 다시 가져옴
+          const uploadFile = await drive.files.get({
+            fileId: file.data.id,
+            fields: "id, webViewLink, webContentLink",
+          });
+
+          delete user_attribute.pKey;
+          delete user_attribute.attr13;
+          delete user_attribute.attr14;
+
+          const insert_query = `INSERT INTO ${user_table} (${Object.values(
+            user_attribute
+          ).join(", ")}) VALUES (${Object.values(user_attribute)
+            .map((el) => "?")
+            .join(", ")})`;
+          // console.log(insert_query);
+
+          // INSERT Value 명시
+          const insert_value_obj = {
+            attr1: pUid,
+            attr2: passWord,
+            attr3: "", // 강사 소개글 (관리자)
+            attr4: name,
+            attr5: phoneNumber,
+            attr6: "", // 강사 프로필 사진 (관리자)
+            attr7: possLocal,
+            attr8: possDay.sort((a, b) => a - b).join("/"),
+            attr9: career,
+            attr10: education,
+            attr11: uploadFile.data.webContentLink, // 첨부파일 경로
+            attr12: 0,
+          };
+          // console.log(insert_value);
+
+          // 계정 생성 (비동기 처리)
+          connection_KK.query(
+            insert_query,
+            Object.values(insert_value_obj),
+            (error, rows, fields) => {
+              if (error) {
+                console.log(error);
+                res.status(400).json({ message: error.sqlMessage });
+              } else {
+                // teacher_class Table Insert
+                const teacher_id = rows.insertId; // 삽입한 강사의 pKey
+                const table = KK_User_Table_Info["teacher_class"].table;
+                const attribute = KK_User_Table_Info["teacher_class"].attribute;
+                const insert_query = `INSERT INTO ${table} (${
+                  attribute.attr1
+                }, ${attribute.attr2}) VALUES ${possClass
+                  .map((el) => {
+                    return `(${teacher_id}, ${el})`;
+                  })
+                  .join(", ")}`;
+
+                connection_KK.query(insert_query, null, (err) => {
+                  if (error) {
+                    console.log(error);
+                    res.status(400).json({ message: error.sqlMessage });
+                  } else {
+                    console.log("Teacher Row DB INSERT Success!");
+                    res
+                      .status(200)
+                      .json({ message: "Teacher SignUp Success! - 200 OK" });
+                  }
+                });
+              }
             }
-          }
-        );
+          );
+        } else {
+          // 첨부파일 Google Drive 저장
+          const { fileName, fileType, baseData } = fileData;
+          const [baseType, zipBase64] = baseData.split(",");
+          const bufferStream = new stream.PassThrough();
+          bufferStream.end(Buffer.from(zipBase64, "base64"));
+
+          const fileMetadata = {
+            name: fileName,
+          };
+
+          const media = {
+            mimeType: fileType,
+            body: bufferStream,
+          };
+
+          // 파일 업로드
+          const file = await drive.files.create({
+            resource: fileMetadata,
+            media: media,
+            fields: "id, webViewLink, webContentLink",
+          });
+
+          // 파일을 Public으로 설정
+          await drive.permissions.create({
+            fileId: file.data.id,
+            requestBody: {
+              role: "reader",
+              type: "anyone",
+            },
+          });
+
+          // soyesnjy@gmail.com 계정에게 파일 공유 설정 (writer 권한)
+          await drive.permissions.create({
+            fileId: file.data.id,
+            requestBody: {
+              role: "writer",
+              type: "user",
+              emailAddress: "soyesnjy@gmail.com",
+            },
+            // transferOwnership: true, // role:'owner' 일 경우
+          });
+
+          // Public URL을 가져오기 위해 파일 정보를 다시 가져옴
+          const uploadFile = await drive.files.get({
+            fileId: file.data.id,
+            fields: "id, webViewLink, webContentLink",
+          });
+          delete user_attribute.pKey;
+          delete user_attribute.attr9;
+          delete user_attribute.attr10;
+
+          const insert_query = `INSERT INTO ${user_table} (${Object.values(
+            user_attribute
+          ).join(", ")}) VALUES (${Object.values(user_attribute)
+            .map((el) => "?")
+            .join(", ")})`;
+          // console.log(insert_query);
+
+          // INSERT Value 명시
+          const insert_value_obj = {
+            attr1: pUid,
+            attr2: passWord,
+            attr3: name,
+            attr4: address,
+            attr5: phoneNumber,
+            attr6: typeA,
+            attr7: uploadFile.data.webContentLink,
+            attr8: 0,
+          };
+          // console.log(insert_value);
+
+          // 계정 생성 (비동기 처리)
+          connection_KK.query(
+            insert_query,
+            Object.values(insert_value_obj),
+            (error, rows, fields) => {
+              if (error) {
+                console.log(error);
+                res.status(400).json({ message: error.sqlMessage });
+              } else {
+                console.log("Agency Row DB INSERT Success!");
+                res
+                  .status(200)
+                  .json({ message: "Agency SignUp Success! - 200 OK" });
+              }
+            }
+          );
+        }
       }
     } catch (err) {
       console.error(err);
