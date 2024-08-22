@@ -66,6 +66,58 @@ const user_kk_select = async (user_table, user_attribute, parsepUid) => {
   return select_data;
 };
 
+const fileDriveSave = async (fileData) => {
+  // 첨부파일 Google Drive 저장
+  const { fileName, fileType, baseData } = fileData;
+  const [baseType, zipBase64] = baseData.split(",");
+  const bufferStream = new stream.PassThrough();
+  bufferStream.end(Buffer.from(zipBase64, "base64"));
+
+  const fileMetadata = {
+    name: fileName,
+  };
+
+  const media = {
+    mimeType: fileType,
+    body: bufferStream,
+  };
+
+  // 파일 업로드
+  const file = await drive.files.create({
+    resource: fileMetadata,
+    media: media,
+    fields: "id, webViewLink, webContentLink",
+  });
+
+  // 파일을 Public으로 설정
+  await drive.permissions.create({
+    fileId: file.data.id,
+    requestBody: {
+      role: "reader",
+      type: "anyone",
+    },
+  });
+
+  // soyesnjy@gmail.com 계정에게 파일 공유 설정 (writer 권한)
+  await drive.permissions.create({
+    fileId: file.data.id,
+    requestBody: {
+      role: "writer",
+      type: "user",
+      emailAddress: "soyesnjy@gmail.com",
+    },
+    // transferOwnership: true, // role:'owner' 일 경우
+  });
+
+  // Public URL을 가져오기 위해 파일 정보를 다시 가져옴
+  const uploadFile = await drive.files.get({
+    fileId: file.data.id,
+    fields: "id, webViewLink, webContentLink",
+  });
+
+  return uploadFile;
+};
+
 const signupController = {
   // AI 중복 체크
   dupleCheckAIHandler: (req, res) => {
@@ -162,53 +214,8 @@ const signupController = {
       // 3. INSERT USER (row가 없는 경우). 중복 검사 통과
       else {
         if (userClass === "teacher") {
-          // 첨부파일 Google Drive 저장
-          const { fileName, fileType, baseData } = fileData;
-          const [baseType, zipBase64] = baseData.split(",");
-          const bufferStream = new stream.PassThrough();
-          bufferStream.end(Buffer.from(zipBase64, "base64"));
-
-          const fileMetadata = {
-            name: fileName,
-          };
-
-          const media = {
-            mimeType: fileType,
-            body: bufferStream,
-          };
-
-          // 파일 업로드
-          const file = await drive.files.create({
-            resource: fileMetadata,
-            media: media,
-            fields: "id, webViewLink, webContentLink",
-          });
-
-          // 파일을 Public으로 설정
-          await drive.permissions.create({
-            fileId: file.data.id,
-            requestBody: {
-              role: "reader",
-              type: "anyone",
-            },
-          });
-
-          // soyesnjy@gmail.com 계정에게 파일 공유 설정 (writer 권한)
-          await drive.permissions.create({
-            fileId: file.data.id,
-            requestBody: {
-              role: "writer",
-              type: "user",
-              emailAddress: "soyesnjy@gmail.com",
-            },
-            // transferOwnership: true, // role:'owner' 일 경우
-          });
-
           // Public URL을 가져오기 위해 파일 정보를 다시 가져옴
-          const uploadFile = await drive.files.get({
-            fileId: file.data.id,
-            fields: "id, webViewLink, webContentLink",
-          });
+          const uploadFile = await fileDriveSave(fileData);
 
           delete user_attribute.pKey;
           delete user_attribute.attr13;
@@ -274,53 +281,9 @@ const signupController = {
             }
           );
         } else {
-          // 첨부파일 Google Drive 저장
-          const { fileName, fileType, baseData } = fileData;
-          const [baseType, zipBase64] = baseData.split(",");
-          const bufferStream = new stream.PassThrough();
-          bufferStream.end(Buffer.from(zipBase64, "base64"));
-
-          const fileMetadata = {
-            name: fileName,
-          };
-
-          const media = {
-            mimeType: fileType,
-            body: bufferStream,
-          };
-
-          // 파일 업로드
-          const file = await drive.files.create({
-            resource: fileMetadata,
-            media: media,
-            fields: "id, webViewLink, webContentLink",
-          });
-
-          // 파일을 Public으로 설정
-          await drive.permissions.create({
-            fileId: file.data.id,
-            requestBody: {
-              role: "reader",
-              type: "anyone",
-            },
-          });
-
-          // soyesnjy@gmail.com 계정에게 파일 공유 설정 (writer 권한)
-          await drive.permissions.create({
-            fileId: file.data.id,
-            requestBody: {
-              role: "writer",
-              type: "user",
-              emailAddress: "soyesnjy@gmail.com",
-            },
-            // transferOwnership: true, // role:'owner' 일 경우
-          });
-
           // Public URL을 가져오기 위해 파일 정보를 다시 가져옴
-          const uploadFile = await drive.files.get({
-            fileId: file.data.id,
-            fields: "id, webViewLink, webContentLink",
-          });
+          const uploadFile = await fileDriveSave(fileData);
+
           delete user_attribute.pKey;
           delete user_attribute.attr9;
           delete user_attribute.attr10;

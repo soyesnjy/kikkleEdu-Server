@@ -10,10 +10,80 @@ connection_AI.connect();
 const connection_KK = mysql.createConnection(dbconfig_kk);
 connection_KK.connect();
 
+// 구글 권한 관련
+const { google } = require("googleapis");
+
+// GCP IAM 서비스 계정 인증
+const serviceAccount = {
+  private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, "\n"),
+  client_email: process.env.GOOGLE_CLIENT_EMAIL,
+  project_id: process.env.GOOGLE_PROJECT_ID,
+};
+
+const auth_google_drive = new google.auth.JWT({
+  email: serviceAccount.client_email,
+  key: serviceAccount.private_key,
+  scopes: ["https://www.googleapis.com/auth/drive"],
+});
+
+const drive = google.drive({ version: "v3", auth: auth_google_drive });
+
 const {
   Review_Table_Info,
   KK_User_Table_Info,
 } = require("../DB/database_table_info");
+
+const fileDriveSave = async (fileData) => {
+  // 첨부파일 Google Drive 저장
+  const { fileName, fileType, baseData } = fileData;
+  const [baseType, zipBase64] = baseData.split(",");
+  const bufferStream = new stream.PassThrough();
+  bufferStream.end(Buffer.from(zipBase64, "base64"));
+
+  const fileMetadata = {
+    name: fileName,
+  };
+
+  const media = {
+    mimeType: fileType,
+    body: bufferStream,
+  };
+
+  // 파일 업로드
+  const file = await drive.files.create({
+    resource: fileMetadata,
+    media: media,
+    fields: "id, webViewLink, webContentLink",
+  });
+
+  // 파일을 Public으로 설정
+  await drive.permissions.create({
+    fileId: file.data.id,
+    requestBody: {
+      role: "reader",
+      type: "anyone",
+    },
+  });
+
+  // soyesnjy@gmail.com 계정에게 파일 공유 설정 (writer 권한)
+  await drive.permissions.create({
+    fileId: file.data.id,
+    requestBody: {
+      role: "writer",
+      type: "user",
+      emailAddress: "soyesnjy@gmail.com",
+    },
+    // transferOwnership: true, // role:'owner' 일 경우
+  });
+
+  // Public URL을 가져오기 위해 파일 정보를 다시 가져옴
+  const uploadFile = await drive.files.get({
+    fileId: file.data.id,
+    fields: "id, webViewLink, webContentLink",
+  });
+
+  return uploadFile;
+};
 
 const classController = {
   // KKClass Data READ
@@ -45,85 +115,46 @@ const classController = {
       res.status(500).json({ message: "Server Error - 500" });
     }
   },
-  // ReviewData CREATE
-  postReviewDataCreate: (req, res) => {
-    console.log("ReviewData CREATE API 호출");
-    const { ReviewData } = req.body;
-    let parseReviewData, parsepUid;
-    try {
-      // 파싱. Client JSON 데이터
-      if (typeof ReviewData === "string") {
-        parseReviewData = JSON.parse(ReviewData);
-      } else parseReviewData = ReviewData;
-
-      const { pUid, profile_img_url, content } = parseReviewData;
-      parsepUid = pUid;
-
-      const review_table = Review_Table_Info.table;
-      const review_attribute = Review_Table_Info.attribute;
-
-      // Consult_Log DB 저장
-      const review_insert_query = `INSERT INTO ${review_table} (${Object.values(
-        review_attribute
-      ).join(", ")}) VALUES (${Object.values(review_attribute)
-        .map((el) => "?")
-        .join(", ")})`;
-      // console.log(consult_insert_query);
-
-      const review_insert_value = [parsepUid, profile_img_url, content];
-      // console.log(consult_insert_value);
-
-      connection_AI.query(review_insert_query, review_insert_value, (err) => {
-        if (err) {
-          console.log("Review_Log DB Save Fail!");
-          console.log("Err sqlMessage: " + err.sqlMessage);
-          res.json({ message: "Err sqlMessage: " + err.sqlMessage });
-        } else {
-          console.log("Review_Log DB Save Success!");
-          res.status(200).json({ message: "Review_Log DB Save Success!" });
-        }
-      });
-    } catch (err) {
-      console.log(err);
-      res.status(500).json({ message: "Server Error - 500" });
-    }
-  },
   // KKClass Data CREATE
-  postKKClassDataCreate: (req, res) => {
-    console.log("ReviewData CREATE API 호출");
-    const { ReviewData } = req.body;
-    let parseReviewData, parsepUid;
+  postKKClassDataCreate: async (req, res) => {
+    console.log("KKClass Data CREATE API 호출");
+    const { data } = req.body;
+    let parseData, parsepUid;
     try {
       // 파싱. Client JSON 데이터
-      if (typeof ReviewData === "string") {
-        parseReviewData = JSON.parse(ReviewData);
-      } else parseReviewData = ReviewData;
+      if (typeof data === "string") {
+        parseData = JSON.parse(data);
+      } else parseData = data;
 
-      const { pUid, profile_img_url, content } = parseReviewData;
+      const { kk_class_title, kk_class_content, kk_class_type, fileData } =
+        parseData;
       parsepUid = pUid;
 
-      const review_table = Review_Table_Info.table;
-      const review_attribute = Review_Table_Info.attribute;
+      // 파일 저장 메서드 호출
+      const uploadFile = await fileDriveSave(fileData);
+
+      const class_table = KK_User_Table_Info["class"].table;
+      const class_attribute = KK_User_Table_Info["class"].attribute;
 
       // Consult_Log DB 저장
-      const review_insert_query = `INSERT INTO ${review_table} (${Object.values(
-        review_attribute
-      ).join(", ")}) VALUES (${Object.values(review_attribute)
-        .map((el) => "?")
-        .join(", ")})`;
+      const class_insert_query = `INSERT INTO ${class_table} (${class_attribute.attr1}, ${class_attribute.attr2}, ${class_attribute.attr3}, ${class_attribute.attr4},) VALUES (?, ?, ?, ?)`;
       // console.log(consult_insert_query);
 
-      const review_insert_value = [parsepUid, profile_img_url, content];
+      const class_insert_value = [
+        kk_class_title,
+        kk_class_content,
+        kk_class_type,
+        uploadFile.data.webContentLink,
+      ];
       // console.log(consult_insert_value);
 
-      connection_AI.query(review_insert_query, review_insert_value, (err) => {
+      connection_AI.query(class_insert_query, class_insert_value, (err) => {
         if (err) {
-          console.log("Review_Log DB Save Fail!");
           console.log("Err sqlMessage: " + err.sqlMessage);
           res.json({ message: "Err sqlMessage: " + err.sqlMessage });
         } else {
-          console.log("Review_Log DB Save Success!");
-          res.status(200).json({ message: "Review_Log DB Save Success!" });
+          console.log("KKClass Data DB Save Success!");
+          res.status(200).json({ message: "KKClass Data DB Save Success!" });
         }
       });
     } catch (err) {

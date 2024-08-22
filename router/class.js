@@ -6,13 +6,13 @@ const { classController } = require("../controller/class");
 
 const {
   getKKClassDataRead,
-  postReviewDataCreate,
+  postKKClassDataCreate,
   deleteReviewDataDelete,
   postReviewDataUpdate,
 } = classController;
 
 router.get("/", getKKClassDataRead);
-router.post("/", postReviewDataCreate);
+router.post("/create", postKKClassDataCreate);
 router.post("/update", postReviewDataUpdate);
 router.delete("/:id", deleteReviewDataDelete);
 
