@@ -90,11 +90,18 @@ const classController = {
   getKKClassDataRead: (req, res) => {
     console.log("KK Class Data READ API 호출");
     try {
+      const query = req.query;
+      const { classType } = query;
       const class_table = KK_User_Table_Info["class"].table;
       const class_attribute = KK_User_Table_Info["class"].attribute;
 
       // SQL 쿼리 준비: 최신순으로 class 데이터 가져오기
-      const select_query = `SELECT ${class_attribute.pKey}, ${class_attribute.attr1} FROM ${class_table} ORDER BY ${class_attribute.attr5} DESC`;
+      // 2024.08.22: query 조회 기능 추가
+      const select_query = `SELECT ${class_attribute.pKey}, ${
+        class_attribute.attr1
+      } FROM ${class_table}${
+        classType ? ` WHERE ${class_attribute.attr3} LIKE '${classType}%'` : ""
+      } ORDER BY ${class_attribute.attr5} DESC`;
 
       // 데이터베이스 쿼리 실행
       connection_KK.query(select_query, null, (err, data) => {
@@ -162,8 +169,8 @@ const classController = {
       res.status(500).json({ message: "Server Error - 500" });
     }
   },
-  // ReviewData UPDATE
-  postReviewDataUpdate: (req, res) => {
+  // TODO# KKClass Data UPDATE
+  postKKClassDataUpdate: (req, res) => {
     console.log("ReviewData UPDATE API 호출");
     const { ReviewData } = req.body;
     let parseReviewData, parseEnteyID, parseContent;
@@ -232,8 +239,8 @@ const classController = {
       res.status(500).json({ message: "Server Error - 500" });
     }
   },
-  // ReviewData DELETE
-  deleteReviewDataDelete: (req, res) => {
+  // TODO# KKClass Data DELETE
+  deleteKKClassDataDelete: (req, res) => {
     console.log("ReviewData DELETE API 호출");
     const { id } = req.params;
 
