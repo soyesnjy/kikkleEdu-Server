@@ -140,9 +140,13 @@ app.use("/review", reviewRouter);
 const kakaoPayRouter = require("./router/kakaoPay");
 app.use("/kakaopay", kakaoPayRouter);
 
-// KK 수업 관련 Router
+// Kikle Edu
+// 수업 관련 Router
 const ClassRouter = require("./router/class");
 app.use("/class", ClassRouter);
+// 강사 관련 Router
+const TeacherRouter = require("./router/teacher");
+app.use("/teacher", TeacherRouter);
 
 // MailTest 경로 라우팅
 // const mailTestRouter = require("./router/mailTest");

@@ -85,35 +85,36 @@ const fileDriveSave = async (fileData) => {
   return uploadFile;
 };
 
-const classController = {
-  // KKClass Data READ
-  getKKClassDataRead: (req, res) => {
-    console.log("KK Class Data READ API 호출");
+const teacherController = {
+  // KKTeacher Data READ
+  getKKTeacherDataRead: (req, res) => {
+    console.log("KK Teacher Data READ API 호출");
     try {
       const query = req.query;
-      const { classType } = query;
-      const class_table = KK_User_Table_Info["class"].table;
-      const class_attribute = KK_User_Table_Info["class"].attribute;
+      const { classIdx, dayofweek } = query;
+      const teacher_table = KK_User_Table_Info["teacher"].table;
+      const teacher_attribute = KK_User_Table_Info["teacher"].attribute;
+      const teacher_class_table = KK_User_Table_Info["teacher_class"].table;
+      const teacher_class_attribute =
+        KK_User_Table_Info["teacher_class"].attribute;
 
-      // SQL 쿼리 준비: 최신순으로 class 데이터 가져오기
-      // 2024.08.22: query 조회 기능 추가
-      const select_query = `SELECT ${class_attribute.pKey}, ${
-        class_attribute.attr1
-      } FROM ${class_table}${
-        classType ? ` WHERE ${class_attribute.attr3} LIKE '%${classType}%'` : ""
-      } ORDER BY ${class_attribute.attr5} DESC`;
+      // teacher_class 테이블 Join Select
+      const select_query = `SELECT t.kk_teacher_idx, t.kk_teacher_introduction, t.kk_teacher_name FROM ${teacher_table} AS t JOIN ${teacher_class_table} AS tc ON t.kk_teacher_idx = tc.kk_teacher_idx WHERE tc.kk_class_idx = ${classIdx}${` AND t.kk_teacher_approve_status = '1'`}${
+        dayofweek ? ` AND t.kk_teacher_dayofweek LIKE '%${dayofweek}%'` : ""
+      } ORDER BY t.kk_teacher_created_at DESC;`;
 
+      // console.log(select_query);
       // 데이터베이스 쿼리 실행
       connection_KK.query(select_query, null, (err, data) => {
         if (err) {
-          console.log(err.sqlMessage);
+          console.log(err);
           return res.status(404).json({
             message: err.sqlMessage,
           });
         }
         // 결과 반환
         return res.status(200).json({
-          message: "class_table Access Success! - 200 OK",
+          message: "Teacher Access Success! - 200 OK",
           data,
         });
       });
@@ -122,8 +123,8 @@ const classController = {
       res.status(500).json({ message: "Server Error - 500" });
     }
   },
-  // KKClass Data CREATE
-  postKKClassDataCreate: async (req, res) => {
+  // TODO# KKTeacher Data CREATE
+  postKKTeacherDataCreate: async (req, res) => {
     console.log("KKClass Data CREATE API 호출");
     const { data } = req.body;
     let parseData, parsepUid;
@@ -169,8 +170,8 @@ const classController = {
       res.status(500).json({ message: "Server Error - 500" });
     }
   },
-  // TODO# KKClass Data UPDATE
-  postKKClassDataUpdate: (req, res) => {
+  // TODO# KKTeacher Data UPDATE
+  postKKTeacherDataUpdate: (req, res) => {
     console.log("ReviewData UPDATE API 호출");
     const { ReviewData } = req.body;
     let parseReviewData, parseEnteyID, parseContent;
@@ -239,8 +240,8 @@ const classController = {
       res.status(500).json({ message: "Server Error - 500" });
     }
   },
-  // TODO# KKClass Data DELETE
-  deleteKKClassDataDelete: (req, res) => {
+  // TODO# KKTeacher Data DELETE
+  deleteKKTeacherDataDelete: (req, res) => {
     console.log("ReviewData DELETE API 호출");
     const { id } = req.params;
 
@@ -266,5 +267,5 @@ const classController = {
 };
 
 module.exports = {
-  classController,
+  teacherController,
 };
