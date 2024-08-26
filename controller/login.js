@@ -1037,11 +1037,12 @@ const loginController_KK = {
             });
           }
 
-          // 승인 대기중일 경우
+          // 3. 승인 대기중일 경우
           if (!ebt_data[0][user_attribute.attr12]) {
             return res.status(402).json({ message: `Waiting for approval` });
           }
 
+          // 4. Social Login Success
           parseEmail = email;
 
           // JWT Token 발급 후 세션 저장
@@ -1167,7 +1168,7 @@ const loginController_KK = {
       if (!ebt_data[0][user_attribute.attr12]) {
         return res.status(402).json({ message: `Waiting for approval` });
       }
-
+      // 4. Social Login Success
       // JWT Token 발급 후 세션 저장
       const token = generateToken({
         id: parseUid,
@@ -1287,13 +1288,14 @@ const loginController_KK = {
             .json({ message: "Password is incorrect! - 202 Accepted" });
         }
         // Password 일치 && 승인 대기중
+        // TODO# 조회 속성 지정방식 변경 요망. 현재 방식은 속성명 변경 시 버그 우려가 있음
         if (!ebt_data[0][`kk_${type}_approve_status`]) {
           console.log(`Waiting for approval (pUid: ${parsepUid})`);
           return res.status(402).json({ message: "Waiting for approval" });
         }
-        // Password 일치
+        // Password 일치: JWT Token 발급 후 세션 저장
 
-        // JWT Token 발급 후 세션 저장
+        const userIdx = ebt_data[0][user_attribute.pKey];
 
         const token = generateToken({
           id: ebt_data[0][user_attribute.attr1], // uid
@@ -1333,6 +1335,8 @@ const loginController_KK = {
         // client 전송
         return res.status(200).json({
           message: "User Login Success! - 200 OK",
+          userIdx,
+          id: parsepUid,
           refreshToken: token.refreshToken,
         });
       }
