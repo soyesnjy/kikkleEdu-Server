@@ -1337,6 +1337,7 @@ const loginController_KK = {
           message: "User Login Success! - 200 OK",
           userIdx,
           id: parsepUid,
+          type: type === "agency" ? ebt_data[0].kk_agency_type : "",
           refreshToken: token.refreshToken,
         });
       }

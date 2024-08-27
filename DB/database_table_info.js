@@ -412,6 +412,34 @@ const KK_User_Table_Info = {
       attr2: "kk_class_idx",
     },
   },
+  reservation: {
+    table: "kk_reservation",
+    attribute: {
+      pKey: "kk_reservation_idx",
+      attr1: "kk_agency_idx",
+      attr2: "kk_class_idx",
+      attr3: "kk_teacher_idx",
+      attr4: "kk_reservation_date", // Array String
+      attr5: "kk_reservation_start_date",
+      attr6: "kk_reservation_end_date",
+      attr7: "kk_reservation_time",
+      attr8: "kk_reservation_cand_teacher", // Array String
+      attr9: "kk_reservation_approve_status",
+      attr10: "kk_reservation_created_at",
+      attr11: "kk_reservation_updated_at",
+    },
+  },
+  attend: {
+    table: "kk_attend",
+    attribute: {
+      pKey: "kk_attend_idx",
+      attr1: "kk_reservation_idx",
+      attr2: "kk_attend_date",
+      attr3: "kk_attend_status",
+      attr4: "kk_attend_created_at",
+      attr5: "kk_attend_updated_at",
+    },
+  },
 };
 
 module.exports = {

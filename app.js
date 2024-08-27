@@ -147,6 +147,9 @@ app.use("/class", ClassRouter);
 // 강사 관련 Router
 const TeacherRouter = require("./router/teacher");
 app.use("/teacher", TeacherRouter);
+// 예약 관련 Router
+const ReservationRouter = require("./router/reservation");
+app.use("/reservation", ReservationRouter);
 
 // MailTest 경로 라우팅
 // const mailTestRouter = require("./router/mailTest");
