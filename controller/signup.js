@@ -146,13 +146,13 @@ const signupController = {
       );
     }
   },
-  // KK 회원가입
-  postSignupAIHandler: async (req, res) => {
+  // KK 회원가입 Create
+  postSignupDataCreate: async (req, res) => {
     const { SignUpData } = req.body;
     // console.log(SignUpData);
 
     let parseSignUpData, parsepUid;
-    const regex = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/; // 한글 및 한글 자모를 포함하는 정규 표현식
+    // const regex = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/; // 한글 및 한글 자모를 포함하는 정규 표현식
     try {
       // 입력값 파싱
       if (typeof SignUpData === "string") {
@@ -240,7 +240,7 @@ const signupController = {
             attr8: possDay.sort((a, b) => a - b).join("/"),
             attr9: career,
             attr10: education,
-            attr11: uploadFile.data.webContentLink, // 첨부파일 경로
+            attr11: uploadFile.data.webViewLink, // 첨부파일 경로
             attr12: 0,
           };
           // console.log(insert_value);
@@ -331,7 +331,225 @@ const signupController = {
       res.status(500).json({ message: "Server Error - 500 Bad Gateway" });
     }
   },
-  // TODO# (관리자) 회원가입 Update - 승인,프로필 이미지, 소개말 등등...
+  // KK 회원가입 Select - approve_status === 0인 계정 select
+  getSignupDataRead: (req, res) => {
+    // console.log("User SignUp Request READ API 호출");
+    try {
+      const { userClass, name } = req.query;
+      // 클라이언트로부터 페이지 번호 받기 (기본값: 1)
+      const page = req.query.page || 1;
+      const limit = 10; // 한 페이지에 보여줄 리뷰의 수
+      const offset = (page - 1) * limit;
+
+      if (true) {
+        const user_table = KK_User_Table_Info[userClass].table;
+        // const user_attribute = KK_User_Table_Info[userClass].attribute;
+
+        // SQL 쿼리 준비: 최신순으로 유저 데이터 가져오기
+        // const select_query = `SELECT * FROM ${user_table} WHERE kk_${userClass}_approve_status = '0' ORDER BY kk_${userClass}_created_at DESC LIMIT ? OFFSET ?`;
+        const select_query = `SELECT * FROM ${user_table} ${
+          userClass === "agency" ? `WHERE kk_agency_type != 'admin' ` : ""
+        }${
+          name ? `WHERE kk_${userClass}_name LIKE '%${name}%'` : ""
+        }ORDER BY kk_${userClass}_created_at DESC LIMIT ? OFFSET ?`;
+        const select_values = [limit, offset];
+        // 데이터베이스 쿼리 실행
+        connection_KK.query(select_query, select_values, (err, data) => {
+          if (err) {
+            console.log(err);
+            return res.status(400).json({
+              message: "User SignUp Request READ Fail! - 400",
+              page: -1,
+              limit: -1,
+              data: [],
+            });
+          }
+          // 결과 반환
+          return res.status(200).json({
+            message: "User SignUp Request READ Success! - 200",
+            page,
+            limit,
+            data: data,
+          });
+        });
+      }
+    } catch (err) {
+      console.log(err);
+      res.status(500).json({ message: "Server Error - 500" });
+    }
+  },
+  // KK 회원가입 Update - 승인,프로필 이미지, 소개말 등 update
+  postSignupDataUpdate: async (req, res) => {
+    const { SignUpData } = req.body;
+    // console.log(SignUpData);
+
+    let parseSignUpData, parsepUid;
+    try {
+      // 입력값 파싱
+      if (typeof SignUpData === "string") {
+        parseSignUpData = JSON.parse(SignUpData);
+      } else parseSignUpData = SignUpData;
+
+      const {
+        // 강사 회원가입 데이터
+        userIdx, // 회원 idx
+        // pUid, // uid 공통
+        userClass, // teacher || agency
+        // passWord, // pwd 공통
+        introduce,
+        name, // 이름 공통
+        phoneNum, // 전화번호 공통
+        location, // 강사 수업 가능 지역
+        // possDay, // 강사 수업 가능 요일
+        // possClass, // 강사 가능 수업
+        history, // 강사 경력
+        education, // 강사 학력
+        fileData, // 첨부파일 공통
+        approveStatus, // 승인 상태 공통
+        // 기관 회원가입 데이터
+        address, // 기관 주소
+        typeA, // 기관 타입
+      } = parseSignUpData;
+
+      // Input 없을 경우
+      if (!userClass) {
+        return res
+          .status(400)
+          .json({ message: "Non Sign Up Input Value - 400 Bad Request" });
+      }
+
+      const user_table = KK_User_Table_Info[userClass].table;
+      const user_attribute = KK_User_Table_Info[userClass].attribute;
+
+      if (userClass === "teacher") {
+        // Public URL을 가져오기 위해 파일 정보를 다시 가져옴
+        let uploadFile = "";
+        if (fileData) uploadFile = await fileDriveSave(fileData);
+
+        delete user_attribute.pKey;
+        delete user_attribute.attr1;
+        delete user_attribute.attr2;
+        delete user_attribute.attr8;
+        delete user_attribute.attr11;
+        delete user_attribute.attr13;
+        delete user_attribute.attr14;
+
+        const update_query = `UPDATE ${user_table} SET ${Object.values(
+          user_attribute
+        )
+          .map((el) => {
+            return `${el} = ?`;
+          })
+          .join(", ")} WHERE kk_teacher_idx = ?`;
+        // console.log(update_query);
+
+        const update_value_obj = {
+          attr3: introduce, // 강사 소개글 (관리자)
+          attr4: name,
+          attr5: phoneNum,
+          attr6: uploadFile ? uploadFile.data.webViewLink : "", // 강사 프로필 사진 (관리자)
+          attr7: location,
+          attr9: history,
+          attr10: education,
+          attr12: approveStatus,
+          pKey: userIdx,
+        };
+        // console.log(update_value_obj);
+
+        if (true) {
+          // 계정 생성 (비동기 처리)
+          connection_KK.query(
+            update_query,
+            Object.values(update_value_obj),
+            (error, rows, fields) => {
+              if (error) {
+                console.log(error);
+                res.status(400).json({ message: error.sqlMessage });
+              } else {
+                console.log("Teacher Row DB UPDATE Success!");
+                res
+                  .status(200)
+                  .json({ message: "Teacher SignUp Update Success! - 200 OK" });
+              }
+            }
+          );
+        }
+      } else {
+        // Public URL을 가져오기 위해 파일 정보를 다시 가져옴
+        const uploadFile = await fileDriveSave(fileData);
+
+        delete user_attribute.pKey;
+        delete user_attribute.attr9;
+        delete user_attribute.attr10;
+
+        const insert_query = `INSERT INTO ${user_table} (${Object.values(
+          user_attribute
+        ).join(", ")}) VALUES (${Object.values(user_attribute)
+          .map((el) => "?")
+          .join(", ")})`;
+        // console.log(insert_query);
+
+        // INSERT Value 명시
+        const insert_value_obj = {
+          attr1: pUid,
+          attr2: passWord,
+          attr3: name,
+          attr4: address,
+          attr5: phoneNum,
+          attr6: typeA,
+          attr7: uploadFile.data.webContentLink,
+          attr8: 0,
+        };
+        // console.log(insert_value);
+
+        // 계정 생성 (비동기 처리)
+        connection_KK.query(
+          insert_query,
+          Object.values(insert_value_obj),
+          (error, rows, fields) => {
+            if (error) {
+              console.log(error);
+              res.status(400).json({ message: error.sqlMessage });
+            } else {
+              console.log("Agency Row DB INSERT Success!");
+              res
+                .status(200)
+                .json({ message: "Agency SignUp Success! - 200 OK" });
+            }
+          }
+        );
+      }
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: "Server Error - 500 Bad Gateway" });
+    }
+  },
+  // KK 회원가입 DELETE
+  deleteReviewDataDelete: (req, res) => {
+    console.log("KK 회원 DELETE API 호출");
+    console.log(req.query);
+    const { userClass, userIdx } = req.query;
+
+    try {
+      const user_table = KK_User_Table_Info[userClass].table;
+      const user_attribute = KK_User_Table_Info[userClass].attribute;
+
+      const delete_query = `DELETE FROM ${user_table} WHERE ${user_attribute.pKey} = ?`;
+
+      connection_KK.query(delete_query, [userIdx], (err) => {
+        if (err) {
+          console.log(err);
+          res.json({ message: "Err sqlMessage: " + err.sqlMessage });
+        } else {
+          console.log("User DB Delete Success!");
+          res.status(200).json({ message: "User DB Delete Success!" });
+        }
+      });
+    } catch (err) {
+      console.log(err);
+      res.status(500).json({ message: "Server Error - 500" });
+    }
+  },
 };
 
 const signupController_Regercy = {
