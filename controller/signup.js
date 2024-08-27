@@ -474,7 +474,9 @@ const signupController = {
             }
           );
         }
-      } else {
+      }
+      // TODO# 강사 Update
+      else {
         // Public URL을 가져오기 위해 파일 정보를 다시 가져옴
         const uploadFile = await fileDriveSave(fileData);
 
