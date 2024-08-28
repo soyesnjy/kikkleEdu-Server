@@ -429,6 +429,14 @@ const KK_User_Table_Info = {
       attr11: "kk_reservation_updated_at",
     },
   },
+  reservation_teacher: {
+    table: "kk_reservation_teacher",
+    attribute: {
+      pKey: "kk_reservation_teacher_idx",
+      attr1: "kk_reservation_idx",
+      attr2: "kk_teacher_idx",
+    },
+  },
   attend: {
     table: "kk_attend",
     attribute: {

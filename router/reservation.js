@@ -11,7 +11,7 @@ const {
   deleteKKReservationDataDelete,
 } = ReservationController;
 
-router.get("/", getKKReservationDataRead);
+router.get("/read", getKKReservationDataRead);
 router.post("/create", postKKReservationDataCreate);
 router.post("/update", postKKReservationDataUpdate);
 router.delete("/:id", deleteKKReservationDataDelete);

@@ -88,34 +88,59 @@ const fileDriveSave = async (fileData) => {
 const ReservationController = {
   // KK Reservation Data READ
   getKKReservationDataRead: (req, res) => {
-    console.log("KK Teacher Data READ API 호출");
+    console.log("KK Reservation Data READ API 호출");
     try {
       const query = req.query;
-      const { classIdx, dayofweek } = query; // classIdx 필수, dayofweek 선택
+      const { classIdx, dayofweek, date } = query; // classIdx 필수, dayofweek 선택
+      const reservation_table = KK_User_Table_Info["reservation"].table;
+      const class_table = KK_User_Table_Info["class"].table;
+      const agency_table = KK_User_Table_Info["agency"].table;
+      const reservation_teacher_table =
+        KK_User_Table_Info["reservation_teacher"].table;
       const teacher_table = KK_User_Table_Info["teacher"].table;
-      const teacher_class_table = KK_User_Table_Info["teacher_class"].table;
 
-      // 회원가입 시 KK_User_Table_Info 데이터를 로드하지 못하는 버그로 인해 사용 불가
-      // const teacher_attribute = KK_User_Table_Info["teacher"].attribute;
-      // const teacher_class_attribute =
-      //   KK_User_Table_Info["teacher_class"].attribute;
-
-      // teacher_class 테이블 Join Select
-      // kk_teacher 테이블과 kk_teacher_class 테이블을 kk_teacher_idx 속성으로 Join
-      // 이후 query 조건을 통해
-      const select_query = `SELECT t.kk_teacher_idx, t.kk_teacher_introduction, t.kk_teacher_name FROM ${teacher_table} AS t JOIN ${teacher_class_table} AS tc ON t.kk_teacher_idx = tc.kk_teacher_idx WHERE tc.kk_class_idx = ${classIdx}${` AND t.kk_teacher_approve_status = '1'`}${
-        dayofweek ? ` AND t.kk_teacher_dayofweek LIKE '%${dayofweek}%'` : ""
-      } ORDER BY t.kk_teacher_created_at DESC;`;
+      const select_query = `SELECT 
+    r.kk_reservation_idx,
+    r.kk_teacher_idx,
+    r.kk_reservation_date,
+    r.kk_reservation_approve_status,
+    r.kk_class_idx,
+    c.kk_class_title,
+    a.kk_agency_name,
+    a.kk_agency_phoneNum,
+    GROUP_CONCAT(
+        CONCAT(
+            'kk_teacher_idx:',t.kk_teacher_idx,', ',
+            'kk_teacher_name:',t.kk_teacher_name
+        ) SEPARATOR ' | '
+    ) AS teacher_info
+FROM 
+    ${reservation_table} AS r
+JOIN 
+    ${class_table} AS c ON r.kk_class_idx = c.kk_class_idx
+JOIN 
+    ${agency_table} AS a ON r.kk_agency_idx = a.kk_agency_idx
+JOIN 
+    ${reservation_teacher_table} AS rt ON r.kk_reservation_idx = rt.kk_reservation_idx
+JOIN 
+    ${teacher_table} AS t ON rt.kk_teacher_idx = t.kk_teacher_idx
+${date ? `WHERE kk_reservation_date LIKE '%${date}%'` : ""}
+GROUP BY 
+    r.kk_reservation_idx, c.kk_class_title, a.kk_agency_name
+ORDER BY 
+    r.kk_reservation_created_at DESC;
+`;
 
       // console.log(select_query);
       // 데이터베이스 쿼리 실행
       connection_KK.query(select_query, null, (err, data) => {
         if (err) {
           console.log(err);
-          return res.status(404).json({
+          return res.status(400).json({
             message: err.sqlMessage,
           });
         }
+        // console.log(data);
         // 결과 반환
         return res.status(200).json({
           message: "Teacher Access Success! - 200 OK",
@@ -127,7 +152,7 @@ const ReservationController = {
       res.status(500).json({ message: "Server Error - 500" });
     }
   },
-  // TODO# KK Reservation Data CREATE
+  // KK Reservation Data CREATE
   postKKReservationDataCreate: async (req, res) => {
     const { data } = req.body;
     // console.log(data);
@@ -194,7 +219,7 @@ const ReservationController = {
           attr5: sortedReservationDate[0],
           attr6: sortedReservationDate[sortedReservationDate.length - 1],
           attr7: reservationTime,
-          attr8: reservationCand.join("/"),
+          attr8: "", //reservationCand.join("/")
           attr9: 0,
         };
         // console.log(insert_value_obj);
@@ -208,39 +233,59 @@ const ReservationController = {
               console.log(error);
               res.status(400).json({ message: error.sqlMessage });
             } else {
-              console.log("Reservation Row DB INSERT Success!");
-              res.status(200).json({
-                message: "Reservation Row DB INSERT Success! - 200 OK",
+              // reservation_teacher Table Insert
+              const reservaion_id = rows.insertId; // 삽입한 강사의 pKey
+              const table = KK_User_Table_Info["reservation_teacher"].table;
+              const attribute =
+                KK_User_Table_Info["reservation_teacher"].attribute;
+              const insert_query = `INSERT INTO ${table} (${attribute.attr1}, ${
+                attribute.attr2
+              }) VALUES ${reservationCand
+                .map((el) => {
+                  return `(${reservaion_id}, ${el})`;
+                })
+                .join(", ")}`;
+
+              connection_KK.query(insert_query, null, (err) => {
+                if (error) {
+                  console.log(error);
+                  res.status(400).json({ message: error.sqlMessage });
+                } else {
+                  console.log("Reservation Row DB INSERT Success!");
+                  res.status(200).json({
+                    message: "Reservation Row DB INSERT Success! - 200 OK",
+                  });
+                }
               });
-
-              // 담당 강사가 결정되는 시점에서 attend table에 row insert
-              // // teacher_class Table Insert
-              // const reservation_id = rows.insertId; // 삽입한 강사의 pKey
-              // const attend_table = KK_User_Table_Info["attend"].table;
-              // const attend_attribute = KK_User_Table_Info["attend"].attribute;
-
-              // const insert_query = `INSERT INTO ${attend_table} (${
-              //   attend_attribute.attr1
-              // }, ${attend_attribute.attr2}, ${
-              //   attend_attribute.attr3
-              // }) VALUES ${sortedReservationDate
-              //   .map((el) => {
-              //     return `(${reservation_id}, ${el}, 0)`;
-              //   })
-              //   .join(", ")}`;
-
-              // connection_KK.query(insert_query, null, (err) => {
-              //   if (error) {
-              //     console.log(error);
-              //     res.status(400).json({ message: error.sqlMessage });
-              //   } else {
-              //     console.log("Reservation Row DB INSERT Success!");
-              //     res.status(200).json({
-              //       message: "Reservation Row DB INSERT Success! - 200 OK",
-              //     });
-              //   }
-              // });
             }
+
+            // 담당 강사가 결정되는 시점에서 attend table에 row insert
+            // // teacher_class Table Insert
+            // const reservation_id = rows.insertId; // 삽입한 강사의 pKey
+            // const attend_table = KK_User_Table_Info["attend"].table;
+            // const attend_attribute = KK_User_Table_Info["attend"].attribute;
+
+            // const insert_query = `INSERT INTO ${attend_table} (${
+            //   attend_attribute.attr1
+            // }, ${attend_attribute.attr2}, ${
+            //   attend_attribute.attr3
+            // }) VALUES ${sortedReservationDate
+            //   .map((el) => {
+            //     return `(${reservation_id}, ${el}, 0)`;
+            //   })
+            //   .join(", ")}`;
+
+            // connection_KK.query(insert_query, null, (err) => {
+            //   if (error) {
+            //     console.log(error);
+            //     res.status(400).json({ message: error.sqlMessage });
+            //   } else {
+            //     console.log("Reservation Row DB INSERT Success!");
+            //     res.status(200).json({
+            //       message: "Reservation Row DB INSERT Success! - 200 OK",
+            //     });
+            //   }
+            // });
           }
         );
       }
@@ -319,23 +364,21 @@ const ReservationController = {
       res.status(500).json({ message: "Server Error - 500" });
     }
   },
-  // TODO# KK Reservation Data DELETE
+  // KK Reservation Data DELETE
   deleteKKReservationDataDelete: (req, res) => {
-    console.log("ReviewData DELETE API 호출");
-    const { id } = req.params;
-
+    console.log("Reservation Data DELETE API 호출");
+    const { reservationIdx } = req.query;
     try {
-      const review_table = Review_Table_Info.table;
-      const delete_query = `DELETE FROM ${review_table} WHERE entry_id = ?`;
+      const reservation_table = KK_User_Table_Info["reservation"].table;
+      const delete_query = `DELETE FROM ${reservation_table} WHERE kk_reservation_idx = ?`;
 
-      connection_AI.query(delete_query, [id], (err) => {
+      connection_KK.query(delete_query, [reservationIdx], (err) => {
         if (err) {
-          console.log("Review_Log DB Delete Fail!");
-          console.log("Err sqlMessage: " + err.sqlMessage);
-          res.json({ message: "Err sqlMessage: " + err.sqlMessage });
+          console.log(err);
+          res.json({ message: err.sqlMessage });
         } else {
-          console.log("Review_Log DB Delete Success!");
-          res.status(200).json({ message: "Review_Log DB Delete Success!" });
+          console.log("Reservation DB Delete Success!");
+          res.status(200).json({ message: "Reservation DB Delete Success!" });
         }
       });
     } catch (err) {
