@@ -28,10 +28,7 @@ const auth_google_drive = new google.auth.JWT({
 
 const drive = google.drive({ version: "v3", auth: auth_google_drive });
 
-const {
-  Review_Table_Info,
-  KK_User_Table_Info,
-} = require("../DB/database_table_info");
+const { KK_User_Table_Info } = require("../DB/database_table_info");
 
 const fileDriveSave = async (fileData) => {
   // 첨부파일 Google Drive 저장
@@ -91,7 +88,7 @@ const ReservationController = {
     console.log("KK Reservation Data READ API 호출");
     try {
       const query = req.query;
-      const { classIdx, dayofweek, date } = query; // classIdx 필수, dayofweek 선택
+      const { date } = query; // classIdx 필수, dayofweek 선택
       const reservation_table = KK_User_Table_Info["reservation"].table;
       const class_table = KK_User_Table_Info["class"].table;
       const agency_table = KK_User_Table_Info["agency"].table;
@@ -295,73 +292,92 @@ ORDER BY
     }
   },
   // TODO# KK Reservation Data UPDATE
-  postKKReservationDataUpdate: (req, res) => {
-    console.log("ReviewData UPDATE API 호출");
-    const { ReviewData } = req.body;
-    let parseReviewData, parseEnteyID, parseContent;
+  postKKReservationDataUpdate: async (req, res) => {
+    const { SignUpData } = req.body;
+    console.log(SignUpData);
+
+    let parseSignUpData;
     try {
-      // 파싱. Client JSON 데이터
-      if (typeof ReviewData === "string") {
-        parseReviewData = JSON.parse(ReviewData);
-      } else parseReviewData = ReviewData;
+      // 입력값 파싱
+      if (typeof SignUpData === "string") {
+        parseSignUpData = JSON.parse(SignUpData);
+      } else parseSignUpData = SignUpData;
 
-      const { content, entry_id } = parseReviewData;
-      parseEnteyID = entry_id;
-      parseContent = content;
+      const {
+        reservationIdx,
+        dateArr,
+        teacherIdx,
+        attendTrigger,
+        approveStatus, // 승인 상태 공통
+      } = parseSignUpData;
 
-      // 오늘 날짜 변환
-      const dateObj = new Date();
-      const year = dateObj.getFullYear();
-      const month = ("0" + (dateObj.getMonth() + 1)).slice(-2);
-      const day = ("0" + dateObj.getDate()).slice(-2);
-      const date = `${year}-${month}-${day}`;
+      // Input 없을 경우
+      if (!reservationIdx) {
+        return res
+          .status(400)
+          .json({ message: "Non Reservation Input Value - 400 Bad Request" });
+      }
 
-      // Review 테이블 및 속성 명시
-      const review_table = Review_Table_Info.table;
-      const review_attribute = Review_Table_Info.attribute;
-      const review_pKey = "entry_id";
+      const reservation_table = KK_User_Table_Info["reservation"].table;
+      const reservation_attribute = KK_User_Table_Info["reservation"].attribute;
 
-      // Query 명시. (Review 존재 확인용 Select Query)
-      const review_select_query = `SELECT ${review_pKey} FROM ${review_table} WHERE ${review_pKey} = ${parseEnteyID}`;
+      const update_query = `UPDATE ${reservation_table} SET ${reservation_attribute.attr3} = ?, ${reservation_attribute.attr9} = ? WHERE kk_reservation_idx = ?`;
+      // console.log(update_query);
 
-      // Select Query
-      connection_AI.query(review_select_query, [], (err, data) => {
-        if (err) {
-          console.log("Review_Log DB Select Fail!");
-          console.log("Err sqlMessage: " + err.sqlMessage);
-        } else {
-          // entry_id에 해당되는 Review가 있을 경우
-          if (data[0]) {
-            // Review 갱신용 Update Query
-            const review_update_query = `UPDATE ${review_table} SET ${review_attribute.attr2} = ? WHERE ${review_pKey} = ?`;
-            const review_update_value = [parseContent, parseEnteyID];
-            // Update Query
-            connection_AI.query(
-              review_update_query,
-              review_update_value,
-              (err) => {
-                if (err) {
-                  console.log("Review_Log DB Update Fail!");
-                  console.log("Err sqlMessage: " + err.sqlMessage);
+      const update_value_obj = {
+        attr3: teacherIdx,
+        attr9: approveStatus,
+        pKey: reservationIdx,
+      };
+
+      // console.log(update_value_obj);
+
+      if (true) {
+        connection_KK.query(
+          update_query,
+          Object.values(update_value_obj),
+          (error, rows, fields) => {
+            if (error) {
+              console.log(error);
+              res.status(400).json({ message: error.sqlMessage });
+            } else if (attendTrigger) {
+              // attend Table Insert
+              const table = KK_User_Table_Info["attend"].table;
+              const attribute = KK_User_Table_Info["attend"].attribute;
+              const insert_query = `INSERT INTO ${table} (${attribute.attr1}, ${
+                attribute.attr2
+              }, ${attribute.attr3}) VALUES ${dateArr
+                .map((el) => {
+                  return `(${reservationIdx}, '${el}', 0)`;
+                })
+                .join(", ")}`;
+
+              console.log(insert_query);
+
+              connection_KK.query(insert_query, null, (err) => {
+                if (error) {
+                  console.log(error);
+                  res.status(400).json({ message: error.sqlMessage });
                 } else {
-                  console.log("Review_Log DB Update Success!");
-                  res
-                    .status(200)
-                    .json({ message: "Review_Log DB Update Success!" });
+                  console.log("Reservation Update && Attend Insert Success!");
+                  res.status(200).json({
+                    message:
+                      "Reservation Update && Attend Insert Success! - 200 OK",
+                  });
                 }
-              }
-            );
+              });
+            } else {
+              console.log("Reservation Row DB INSERT Success!");
+              res.status(200).json({
+                message: "Reservation Update Success! - 200 OK",
+              });
+            }
           }
-          // entry_id에 해당되는 Review가 없을 경우
-          else {
-            console.log("Review_Log DB Non Review!");
-            res.status(400).json({ message: "Review_Log DB Non Review!" });
-          }
-        }
-      });
+        );
+      }
     } catch (err) {
-      console.log(err);
-      res.status(500).json({ message: "Server Error - 500" });
+      console.error(err);
+      res.status(500).json({ message: "Server Error - 500 Bad Gateway" });
     }
   },
   // KK Reservation Data DELETE
