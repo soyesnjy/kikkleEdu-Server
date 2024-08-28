@@ -437,8 +437,9 @@ const signupController = {
         const select_query = `SELECT * FROM ${user_table} ${
           userClass === "agency" ? `WHERE kk_agency_type != 'admin' ` : ""
         }${
-          name ? `WHERE kk_${userClass}_name LIKE '%${name}%'` : ""
+          name ? `WHERE kk_${userClass}_name LIKE '%${name}%' ` : ""
         }ORDER BY kk_${userClass}_created_at DESC LIMIT ? OFFSET ?`;
+
         const select_values = [limit, offset];
         // 데이터베이스 쿼리 실행
         connection_KK.query(select_query, select_values, (err, data) => {
@@ -513,6 +514,7 @@ const signupController = {
         let uploadFile = "";
         if (fileData) uploadFile = await fileDriveSave(fileData);
 
+        if (!fileData) delete user_attribute.attr6; // fileData를 업데이트하지 않는 경우 목록에서 삭제
         delete user_attribute.pKey;
         delete user_attribute.attr1;
         delete user_attribute.attr2;
@@ -534,13 +536,14 @@ const signupController = {
           attr3: introduce, // 강사 소개글 (관리자)
           attr4: name,
           attr5: phoneNum,
-          attr6: uploadFile ? uploadFile.data.webViewLink : "", // 강사 프로필 사진 (관리자)
+          ...(uploadFile && { attr6: uploadFile.data.webViewLink }), // 강사 프로필 사진 (관리자)
           attr7: location,
           attr9: history,
           attr10: education,
           attr12: approveStatus,
           pKey: userIdx,
         };
+
         // console.log(update_value_obj);
 
         if (true) {
@@ -562,51 +565,63 @@ const signupController = {
           );
         }
       }
-      // TODO# 강사 Update
+      // TODO# 기관 Update
       else {
         // Public URL을 가져오기 위해 파일 정보를 다시 가져옴
-        const uploadFile = await fileDriveSave(fileData);
+        // let uploadFile = "";
+        // if (fileData) uploadFile = await fileDriveSave(fileData);
 
         delete user_attribute.pKey;
+        delete user_attribute.attr1;
+        delete user_attribute.attr2;
+        delete user_attribute.attr7;
         delete user_attribute.attr9;
         delete user_attribute.attr10;
 
-        const insert_query = `INSERT INTO ${user_table} (${Object.values(
+        // const update_query = `UPDATE ${user_table} SET (${Object.values(
+        //   user_attribute
+        // ).join(", ")}) VALUES (${Object.values(user_attribute)
+        //   .map((el) => "?")
+        //   .join(", ")})`;
+
+        const update_query = `UPDATE ${user_table} SET ${Object.values(
           user_attribute
-        ).join(", ")}) VALUES (${Object.values(user_attribute)
-          .map((el) => "?")
-          .join(", ")})`;
-        // console.log(insert_query);
+        )
+          .map((el) => {
+            return `${el} = ?`;
+          })
+          .join(", ")} WHERE kk_agency_idx = ?`;
+        // console.log(update_query);
 
         // INSERT Value 명시
-        const insert_value_obj = {
-          attr1: pUid,
-          attr2: passWord,
+        const update_value_obj = {
           attr3: name,
           attr4: address,
           attr5: phoneNum,
           attr6: typeA,
-          attr7: uploadFile.data.webContentLink,
-          attr8: 0,
+          attr8: approveStatus,
+          pKey: userIdx,
         };
-        // console.log(insert_value);
+        // console.log(update_value_obj);
 
-        // 계정 생성 (비동기 처리)
-        connection_KK.query(
-          insert_query,
-          Object.values(insert_value_obj),
-          (error, rows, fields) => {
-            if (error) {
-              console.log(error);
-              res.status(400).json({ message: error.sqlMessage });
-            } else {
-              console.log("Agency Row DB INSERT Success!");
-              res
-                .status(200)
-                .json({ message: "Agency SignUp Success! - 200 OK" });
+        if (true) {
+          // 계정 생성 (비동기 처리)
+          connection_KK.query(
+            update_query,
+            Object.values(update_value_obj),
+            (error, rows, fields) => {
+              if (error) {
+                console.log(error);
+                res.status(400).json({ message: error.sqlMessage });
+              } else {
+                console.log("Agency Row DB Update Success!");
+                res
+                  .status(200)
+                  .json({ message: "Agency Update Success! - 200 OK" });
+              }
             }
-          }
-        );
+          );
+        }
       }
     } catch (err) {
       console.error(err);
