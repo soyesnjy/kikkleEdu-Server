@@ -616,19 +616,19 @@ const signupController = {
   // KK 회원가입 DELETE
   deleteReviewDataDelete: (req, res) => {
     console.log("KK 회원 DELETE API 호출");
-    console.log(req.query);
+    // console.log(req.query);
     const { userClass, userIdx } = req.query;
 
     try {
       const user_table = KK_User_Table_Info[userClass].table;
-      const user_attribute = KK_User_Table_Info[userClass].attribute;
+      // const user_attribute = KK_User_Table_Info[userClass].attribute;
 
-      const delete_query = `DELETE FROM ${user_table} WHERE ${user_attribute.pKey} = ?`;
+      const delete_query = `DELETE FROM ${user_table} WHERE kk_${userClass}_idx = ?`;
 
       connection_KK.query(delete_query, [userIdx], (err) => {
         if (err) {
           console.log(err);
-          res.json({ message: "Err sqlMessage: " + err.sqlMessage });
+          res.status(400).json({ message: err.sqlMessage });
         } else {
           console.log("User DB Delete Success!");
           res.status(200).json({ message: "User DB Delete Success!" });
