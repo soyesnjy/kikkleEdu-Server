@@ -111,7 +111,7 @@ app.use(
 );
 
 app.get("/", (req, res) => {
-  // jenkins 배포 테스트용 주석2
+  // jenkins 배포 테스트용 주석3
   res.status(200).json({ text: "Hello Kikkle!" });
 });
 
