@@ -279,17 +279,13 @@ const signupController = {
       //     .status(400)
       //     .json({ message: "Non Korean Input Value - 400 Bad Request" });
       // }
-
+      console.log(`User Create API 호출 - ${userClass}`);
       const user_table = KK_User_Table_Info[userClass].table;
       const user_attribute = KK_User_Table_Info[userClass].attribute;
 
       // 1. SELECT TEST (row가 있는지 없는지 검사)
-      const user_data = await user_kk_select(
-        user_table,
-        user_attribute,
-        parsepUid
-      );
-      // return res.status(400).json({ message: "User SignUp Success! - 200 OK" });
+      const select_query = `SELECT * FROM ${user_table} WHERE kk_${userClass}_uid ='${parsepUid}'`;
+      const user_data = await fetchUserData(connection_KK, select_query);
 
       // 2. DUPLICATE USER (row 중복검사)
       if (user_data[0]) {
@@ -420,7 +416,7 @@ const signupController = {
   },
   // KK 회원가입 Select - approve_status === 0인 계정 select
   getSignupDataRead: (req, res) => {
-    // console.log("User SignUp Request READ API 호출");
+    console.log("User Data READ API 호출");
     try {
       const { userClass, name } = req.query;
       // 클라이언트로부터 페이지 번호 받기 (기본값: 1)
