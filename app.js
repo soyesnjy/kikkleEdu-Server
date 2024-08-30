@@ -150,6 +150,9 @@ app.use("/teacher", TeacherRouter);
 // 예약 관련 Router
 const ReservationRouter = require("./router/reservation");
 app.use("/reservation", ReservationRouter);
+// 마이페이지 관련 Router
+const MypageRouter = require("./router/mypage");
+app.use("/mypage", MypageRouter);
 
 // MailTest 경로 라우팅
 // const mailTestRouter = require("./router/mailTest");

@@ -34,13 +34,13 @@ async function fetchUserData(connection, query) {
 const ReservationController = {
   // KK Reservation Data READ
   getKKReservationDataRead: async (req, res) => {
-    console.log("KK Reservation Data READ API 호출");
+    // console.log("KK Reservation Data READ API 호출");
     try {
       const query = req.query;
       const { date, pageNum } = query; // 날짜 검색
       // console.log(pageNum);
       const page = pageNum || 1;
-      const limit = 1; // 한 페이지에 보여줄 리뷰의 수
+      const limit = 5; // 한 페이지에 보여줄 리뷰의 수
       const offset = (page - 1) * limit;
 
       // Pagination Last Number Select

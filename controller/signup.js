@@ -401,7 +401,7 @@ const signupController = {
   },
   // KK 회원가입 Select - approve_status === 0인 계정 select
   getSignupDataRead: async (req, res) => {
-    console.log("User Data READ API 호출");
+    // console.log("User Data READ API 호출");
     try {
       const { pageNum, userClass, name } = req.query;
       // 클라이언트로부터 페이지 번호 받기 (기본값: 1)

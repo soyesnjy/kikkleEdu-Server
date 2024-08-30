@@ -2,11 +2,13 @@
 const express = require("express");
 const router = express.Router();
 const { errController } = require("../controller/index");
-const { teacherController } = require("../controller/teacher");
+const { mypageController } = require("../controller/mypage");
 
-const { getKKTeacherDataRead } = teacherController;
+const { getKKTeacherAttendDataRead, postKKTeacherAttendDataUpdate } =
+  mypageController;
 
-router.get("/", getKKTeacherDataRead);
+router.get("/read", getKKTeacherAttendDataRead);
+router.post("/update", postKKTeacherAttendDataUpdate);
 
 // 에러 메세지 처리
 router.use(errController.errMessageHandler);
