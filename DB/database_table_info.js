@@ -423,10 +423,9 @@ const KK_User_Table_Info = {
       attr5: "kk_reservation_start_date",
       attr6: "kk_reservation_end_date",
       attr7: "kk_reservation_time",
-      attr8: "kk_reservation_cand_teacher", // Array String
-      attr9: "kk_reservation_approve_status",
-      attr10: "kk_reservation_created_at",
-      attr11: "kk_reservation_updated_at",
+      attr8: "kk_reservation_approve_status",
+      attr9: "kk_reservation_created_at",
+      attr10: "kk_reservation_updated_at",
     },
   },
   reservation_teacher: {

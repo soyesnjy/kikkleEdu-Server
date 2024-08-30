@@ -1,86 +1,35 @@
 // MySQL 접근
 const mysql = require("mysql");
-const { dbconfig_ai, dbconfig_kk } = require("../DB/database");
-
-// AI DB 연결
-const connection_AI = mysql.createConnection(dbconfig_ai);
-connection_AI.connect();
+const { dbconfig_kk } = require("../DB/database");
 
 // 키클 DB 연결
 const connection_KK = mysql.createConnection(dbconfig_kk);
 connection_KK.connect();
 
-// 구글 권한 관련
-const { google } = require("googleapis");
-
-// GCP IAM 서비스 계정 인증
-const serviceAccount = {
-  private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, "\n"),
-  client_email: process.env.GOOGLE_CLIENT_EMAIL,
-  project_id: process.env.GOOGLE_PROJECT_ID,
-};
-
-const auth_google_drive = new google.auth.JWT({
-  email: serviceAccount.client_email,
-  key: serviceAccount.private_key,
-  scopes: ["https://www.googleapis.com/auth/drive"],
-});
-
-const drive = google.drive({ version: "v3", auth: auth_google_drive });
-
 const { KK_User_Table_Info } = require("../DB/database_table_info");
 
-const fileDriveSave = async (fileData) => {
-  // 첨부파일 Google Drive 저장
-  const { fileName, fileType, baseData } = fileData;
-  const [baseType, zipBase64] = baseData.split(",");
-  const bufferStream = new stream.PassThrough();
-  bufferStream.end(Buffer.from(zipBase64, "base64"));
-
-  const fileMetadata = {
-    name: fileName,
-  };
-
-  const media = {
-    mimeType: fileType,
-    body: bufferStream,
-  };
-
-  // 파일 업로드
-  const file = await drive.files.create({
-    resource: fileMetadata,
-    media: media,
-    fields: "id, webViewLink, webContentLink",
+// 동기식 DB 접근 함수 1. Promise 생성 함수
+function queryAsync(connection, query, parameters) {
+  return new Promise((resolve, reject) => {
+    connection.query(query, parameters, (error, results, fields) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve(results);
+      }
+    });
   });
-
-  // 파일을 Public으로 설정
-  await drive.permissions.create({
-    fileId: file.data.id,
-    requestBody: {
-      role: "reader",
-      type: "anyone",
-    },
-  });
-
-  // soyesnjy@gmail.com 계정에게 파일 공유 설정 (writer 권한)
-  await drive.permissions.create({
-    fileId: file.data.id,
-    requestBody: {
-      role: "writer",
-      type: "user",
-      emailAddress: "soyesnjy@gmail.com",
-    },
-    // transferOwnership: true, // role:'owner' 일 경우
-  });
-
-  // Public URL을 가져오기 위해 파일 정보를 다시 가져옴
-  const uploadFile = await drive.files.get({
-    fileId: file.data.id,
-    fields: "id, webViewLink, webContentLink",
-  });
-
-  return uploadFile;
-};
+}
+// 프로미스 resolve 반환값 사용. (User Data return)
+async function fetchUserData(connection, query) {
+  try {
+    let results = await queryAsync(connection, query, []);
+    // console.log(results[0]);
+    return results;
+  } catch (error) {
+    console.error(error);
+  }
+}
 
 const ReservationController = {
   // KK Reservation Data READ
@@ -88,13 +37,7 @@ const ReservationController = {
     console.log("KK Reservation Data READ API 호출");
     try {
       const query = req.query;
-      const { date } = query; // classIdx 필수, dayofweek 선택
-      const reservation_table = KK_User_Table_Info["reservation"].table;
-      const class_table = KK_User_Table_Info["class"].table;
-      const agency_table = KK_User_Table_Info["agency"].table;
-      const reservation_teacher_table =
-        KK_User_Table_Info["reservation_teacher"].table;
-      const teacher_table = KK_User_Table_Info["teacher"].table;
+      const { date } = query; // 날짜 검색
 
       const select_query = `SELECT 
     r.kk_reservation_idx,
@@ -112,15 +55,15 @@ const ReservationController = {
         ) SEPARATOR ' | '
     ) AS teacher_info
 FROM 
-    ${reservation_table} AS r
+    kk_reservation AS r
 JOIN 
-    ${class_table} AS c ON r.kk_class_idx = c.kk_class_idx
+    kk_class AS c ON r.kk_class_idx = c.kk_class_idx
 JOIN 
-    ${agency_table} AS a ON r.kk_agency_idx = a.kk_agency_idx
+    kk_agency AS a ON r.kk_agency_idx = a.kk_agency_idx
 JOIN 
-    ${reservation_teacher_table} AS rt ON r.kk_reservation_idx = rt.kk_reservation_idx
+    kk_reservation_teacher AS rt ON r.kk_reservation_idx = rt.kk_reservation_idx
 JOIN 
-    ${teacher_table} AS t ON rt.kk_teacher_idx = t.kk_teacher_idx
+    kk_teacher AS t ON rt.kk_teacher_idx = t.kk_teacher_idx
 ${date ? `WHERE kk_reservation_date LIKE '%${date}%'` : ""}
 GROUP BY 
     r.kk_reservation_idx, c.kk_class_title, a.kk_agency_name
@@ -189,22 +132,10 @@ ORDER BY
       ];
       // console.log(sortedReservationDate);
 
-      // TODO# 예약 DB INSERT Reservation
+      // 예약 DB INSERT Reservation
       if (true) {
-        const reservation_table = KK_User_Table_Info["reservation"].table;
-        const reservation_attribute =
-          KK_User_Table_Info["reservation"].attribute;
-
         // INSERT Reservation
-        delete reservation_attribute.pKey; // kk_reservation_idx
-        delete reservation_attribute.attr10; // kk_reservation_created_at
-        delete reservation_attribute.attr11; // kk_reservation_updated_at
-
-        const insert_query = `INSERT INTO ${reservation_table} (${Object.values(
-          reservation_attribute
-        ).join(", ")}) VALUES (${Object.values(reservation_attribute)
-          .map((el) => "?")
-          .join(", ")})`;
+        const insert_query = `INSERT INTO kk_reservation (kk_agency_idx, kk_class_idx, kk_teacher_idx, kk_reservation_date, kk_reservation_start_date, kk_reservation_end_date, kk_reservation_time, kk_reservation_approve_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
         // console.log(insert_query);
 
         // INSERT Value 명시
@@ -216,12 +147,11 @@ ORDER BY
           attr5: sortedReservationDate[0],
           attr6: sortedReservationDate[sortedReservationDate.length - 1],
           attr7: reservationTime,
-          attr8: "", //reservationCand.join("/")
-          attr9: 0,
+          attr8: 0,
         };
         // console.log(insert_value_obj);
 
-        // 계정 생성 (비동기 처리)
+        // 예약 생성
         connection_KK.query(
           insert_query,
           Object.values(insert_value_obj),
@@ -232,12 +162,8 @@ ORDER BY
             } else {
               // reservation_teacher Table Insert
               const reservaion_id = rows.insertId; // 삽입한 강사의 pKey
-              const table = KK_User_Table_Info["reservation_teacher"].table;
-              const attribute =
-                KK_User_Table_Info["reservation_teacher"].attribute;
-              const insert_query = `INSERT INTO ${table} (${attribute.attr1}, ${
-                attribute.attr2
-              }) VALUES ${reservationCand
+
+              const insert_query = `INSERT INTO kk_reservation_teacher (kk_reservation_idx, kk_teacher_idx) VALUES ${reservationCand
                 .map((el) => {
                   return `(${reservaion_id}, ${el})`;
                 })
@@ -255,34 +181,6 @@ ORDER BY
                 }
               });
             }
-
-            // 담당 강사가 결정되는 시점에서 attend table에 row insert
-            // // teacher_class Table Insert
-            // const reservation_id = rows.insertId; // 삽입한 강사의 pKey
-            // const attend_table = KK_User_Table_Info["attend"].table;
-            // const attend_attribute = KK_User_Table_Info["attend"].attribute;
-
-            // const insert_query = `INSERT INTO ${attend_table} (${
-            //   attend_attribute.attr1
-            // }, ${attend_attribute.attr2}, ${
-            //   attend_attribute.attr3
-            // }) VALUES ${sortedReservationDate
-            //   .map((el) => {
-            //     return `(${reservation_id}, ${el}, 0)`;
-            //   })
-            //   .join(", ")}`;
-
-            // connection_KK.query(insert_query, null, (err) => {
-            //   if (error) {
-            //     console.log(error);
-            //     res.status(400).json({ message: error.sqlMessage });
-            //   } else {
-            //     console.log("Reservation Row DB INSERT Success!");
-            //     res.status(200).json({
-            //       message: "Reservation Row DB INSERT Success! - 200 OK",
-            //     });
-            //   }
-            // });
           }
         );
       }
@@ -291,7 +189,7 @@ ORDER BY
       res.status(500).json({ message: "Server Error - 500 Bad Gateway" });
     }
   },
-  // TODO# KK Reservation Data UPDATE
+  // KK Reservation Data UPDATE
   postKKReservationDataUpdate: async (req, res) => {
     const { SignUpData } = req.body;
     console.log(SignUpData);
@@ -318,10 +216,10 @@ ORDER BY
           .json({ message: "Non Reservation Input Value - 400 Bad Request" });
       }
 
-      const reservation_table = KK_User_Table_Info["reservation"].table;
-      const reservation_attribute = KK_User_Table_Info["reservation"].attribute;
+      // const reservation_table = KK_User_Table_Info["reservation"].table;
+      // const reservation_attribute = KK_User_Table_Info["reservation"].attribute;
 
-      const update_query = `UPDATE ${reservation_table} SET ${reservation_attribute.attr3} = ?, ${reservation_attribute.attr9} = ? WHERE kk_reservation_idx = ?`;
+      const update_query = `UPDATE kk_reservation SET kk_teacher_idx = ?, kk_reservation_approve_status = ? WHERE kk_reservation_idx = ?`;
       // console.log(update_query);
 
       const update_value_obj = {
@@ -332,6 +230,15 @@ ORDER BY
 
       // console.log(update_value_obj);
 
+      // reservationIdx에 연결된 attend row select
+      const select_query = `SELECT * FROM kk_attend WHERE kk_reservation_idx = ${reservationIdx}`;
+      const select_attend_data = await fetchUserData(
+        connection_KK,
+        select_query
+      );
+
+      // console.log(select_attend_data);
+
       if (true) {
         connection_KK.query(
           update_query,
@@ -340,19 +247,18 @@ ORDER BY
             if (error) {
               console.log(error);
               res.status(400).json({ message: error.sqlMessage });
-            } else if (attendTrigger) {
+            }
+            // 첫 강사 확정일 경우 && attend table에 reservationIdx와 연결된 row가 없을 경우
+            else if (attendTrigger && !select_attend_data.length) {
               // attend Table Insert
-              const table = KK_User_Table_Info["attend"].table;
-              const attribute = KK_User_Table_Info["attend"].attribute;
-              const insert_query = `INSERT INTO ${table} (${attribute.attr1}, ${
-                attribute.attr2
-              }, ${attribute.attr3}) VALUES ${dateArr
+              // 2024.08.30: import 에러 관련 처리
+              const insert_query = `INSERT INTO kk_attend (kk_reservation_idx, kk_attend_date, kk_attend_status) VALUES ${dateArr
                 .map((el) => {
                   return `(${reservationIdx}, '${el}', 0)`;
                 })
                 .join(", ")}`;
 
-              console.log(insert_query);
+              // console.log(insert_query);
 
               connection_KK.query(insert_query, null, (err) => {
                 if (error) {
@@ -366,7 +272,9 @@ ORDER BY
                   });
                 }
               });
-            } else {
+            }
+            // 확정 강사 수정일 경우
+            else {
               console.log("Reservation Row DB INSERT Success!");
               res.status(200).json({
                 message: "Reservation Update Success! - 200 OK",
@@ -385,8 +293,7 @@ ORDER BY
     console.log("Reservation Data DELETE API 호출");
     const { reservationIdx } = req.query;
     try {
-      const reservation_table = KK_User_Table_Info["reservation"].table;
-      const delete_query = `DELETE FROM ${reservation_table} WHERE kk_reservation_idx = ?`;
+      const delete_query = `DELETE FROM kk_reservation WHERE kk_reservation_idx = ?`;
 
       connection_KK.query(delete_query, [reservationIdx], (err) => {
         if (err) {
