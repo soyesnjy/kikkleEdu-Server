@@ -33,11 +33,21 @@ async function fetchUserData(connection, query) {
 
 const ReservationController = {
   // KK Reservation Data READ
-  getKKReservationDataRead: (req, res) => {
+  getKKReservationDataRead: async (req, res) => {
     console.log("KK Reservation Data READ API 호출");
     try {
       const query = req.query;
-      const { date } = query; // 날짜 검색
+      const { date, pageNum } = query; // 날짜 검색
+      // console.log(pageNum);
+      const page = pageNum || 1;
+      const limit = 1; // 한 페이지에 보여줄 리뷰의 수
+      const offset = (page - 1) * limit;
+
+      // Pagination Last Number Select
+      const count_query = `SELECT COUNT(*) FROM kk_reservation`;
+      const count_data = await fetchUserData(connection_KK, count_query);
+      const lastPageNum = Math.ceil(count_data[0]["COUNT(*)"] / limit);
+      // console.log(lastPageNum);
 
       const select_query = `SELECT 
     r.kk_reservation_idx,
@@ -68,12 +78,12 @@ ${date ? `WHERE kk_reservation_date LIKE '%${date}%'` : ""}
 GROUP BY 
     r.kk_reservation_idx, c.kk_class_title, a.kk_agency_name
 ORDER BY 
-    r.kk_reservation_created_at DESC;
+    r.kk_reservation_created_at DESC LIMIT ? OFFSET ?;
 `;
 
       // console.log(select_query);
       // 데이터베이스 쿼리 실행
-      connection_KK.query(select_query, null, (err, data) => {
+      connection_KK.query(select_query, [limit, offset], (err, data) => {
         if (err) {
           console.log(err);
           return res.status(400).json({
@@ -84,6 +94,9 @@ ORDER BY
         // 결과 반환
         return res.status(200).json({
           message: "Teacher Access Success! - 200 OK",
+          page,
+          limit,
+          lastPageNum,
           data,
         });
       });

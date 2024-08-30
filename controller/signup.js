@@ -32,7 +32,6 @@ const drive = google.drive({ version: "v3", auth: auth_google_drive });
 
 // Database Table Info
 const {
-  User_Table_Info,
   // KK_User_Table_Info,
 } = require("../DB/database_table_info");
 
@@ -401,18 +400,27 @@ const signupController = {
     }
   },
   // KK 회원가입 Select - approve_status === 0인 계정 select
-  getSignupDataRead: (req, res) => {
+  getSignupDataRead: async (req, res) => {
     console.log("User Data READ API 호출");
     try {
-      const { userClass, name } = req.query;
+      const { pageNum, userClass, name } = req.query;
       // 클라이언트로부터 페이지 번호 받기 (기본값: 1)
-      const page = req.query.page || 1;
-      const limit = 10; // 한 페이지에 보여줄 리뷰의 수
+      // console.log(pageNum);
+      const page = pageNum || 1;
+      const limit = 5; // 한 페이지에 보여줄 리뷰의 수
       const offset = (page - 1) * limit;
 
       if (true) {
         const user_table = KK_User_Table_Info[userClass].table;
         // const user_attribute = KK_User_Table_Info[userClass].attribute;
+
+        // Pagination Last Number Select
+        const count_query = `SELECT COUNT(*) FROM ${user_table} ${
+          userClass === "agency" ? `WHERE kk_agency_type != 'admin' ` : ""
+        }`;
+        const count_data = await fetchUserData(connection_KK, count_query);
+        const lastPageNum = Math.ceil(count_data[0]["COUNT(*)"] / limit);
+        // console.log(lastPageNum);
 
         // SQL 쿼리 준비: 최신순으로 유저 데이터 가져오기
         // const select_query = `SELECT * FROM ${user_table} WHERE kk_${userClass}_approve_status = '0' ORDER BY kk_${userClass}_created_at DESC LIMIT ? OFFSET ?`;
@@ -431,6 +439,7 @@ const signupController = {
               message: "User SignUp Request READ Fail! - 400",
               page: -1,
               limit: -1,
+              lastPageNum: -1,
               data: [],
             });
           }
@@ -439,6 +448,7 @@ const signupController = {
             message: "User SignUp Request READ Success! - 200",
             page,
             limit,
+            lastPageNum,
             data: data,
           });
         });
