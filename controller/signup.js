@@ -238,7 +238,7 @@ const signupController = {
     const { SignUpData } = req.body;
     // console.log(SignUpData);
 
-    let parseSignUpData, parsepUid;
+    let parseSignUpData;
     // const regex = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/; // 한글 및 한글 자모를 포함하는 정규 표현식
     try {
       // 입력값 파싱
@@ -265,13 +265,11 @@ const signupController = {
       } = parseSignUpData;
 
       // Input 없을 경우
-      if (!pUid || !passWord) {
+      if (!pUid || !passWord || !fileData) {
         return res
           .status(400)
           .json({ message: "Non Sign Up Input Value - 400 Bad Request" });
       }
-
-      parsepUid = pUid;
 
       // 입력값이 한글일 경우
       // if (regex.test(pUid) || regex.test(passWard)) {
@@ -280,11 +278,13 @@ const signupController = {
       //     .json({ message: "Non Korean Input Value - 400 Bad Request" });
       // }
       console.log(`User Create API 호출 - ${userClass}`);
-      const user_table = KK_User_Table_Info[userClass].table;
-      const user_attribute = KK_User_Table_Info[userClass].attribute;
+      // const user_table = KK_User_Table_Info[userClass].table;
+      // const user_attribute = KK_User_Table_Info[userClass].attribute;
 
       // 1. SELECT TEST (row가 있는지 없는지 검사)
-      const select_query = `SELECT * FROM ${user_table} WHERE kk_${userClass}_uid ='${parsepUid}'`;
+      const select_query = `SELECT * FROM ${
+        userClass === "teacher" ? "kk_teacher" : "kk_agency"
+      } WHERE kk_${userClass}_uid ='${pUid}'`;
       const user_data = await fetchUserData(connection_KK, select_query);
 
       // 2. DUPLICATE USER (row 중복검사)
@@ -300,15 +300,8 @@ const signupController = {
           // Public URL을 가져오기 위해 파일 정보를 다시 가져옴
           const uploadFile = await fileDriveSave(fileData);
 
-          delete user_attribute.pKey;
-          delete user_attribute.attr13;
-          delete user_attribute.attr14;
-
-          const insert_query = `INSERT INTO ${user_table} (${Object.values(
-            user_attribute
-          ).join(", ")}) VALUES (${Object.values(user_attribute)
-            .map((el) => "?")
-            .join(", ")})`;
+          // 2024.08.30: import 에러로 인한 String 처리
+          const insert_query = `INSERT INTO kk_teacher (kk_teacher_uid, kk_teacher_pwd, kk_teacher_introduction, kk_teacher_name, kk_teacher_phoneNum, kk_teacher_profileImg_path, kk_teacher_location, kk_teacher_dayofweek, kk_teacher_history, kk_teacher_education, kk_teacher_file_path, kk_teacher_approve_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
           // console.log(insert_query);
 
           // INSERT Value 명시
@@ -326,7 +319,7 @@ const signupController = {
             attr11: uploadFile.data.webViewLink, // 첨부파일 경로
             attr12: 0,
           };
-          // console.log(insert_value);
+          // console.log(insert_value_obj);
 
           // 계정 생성 (비동기 처리)
           connection_KK.query(
@@ -367,15 +360,8 @@ const signupController = {
           // Public URL을 가져오기 위해 파일 정보를 다시 가져옴
           const uploadFile = await fileDriveSave(fileData);
 
-          delete user_attribute.pKey;
-          delete user_attribute.attr9;
-          delete user_attribute.attr10;
-
-          const insert_query = `INSERT INTO ${user_table} (${Object.values(
-            user_attribute
-          ).join(", ")}) VALUES (${Object.values(user_attribute)
-            .map((el) => "?")
-            .join(", ")})`;
+          // 2024.08.30: import 에러로 인한 String 처리
+          const insert_query = `INSERT INTO kk_agency (kk_agency_uid, kk_agency_pwd, kk_agency_name, kk_agency_address, kk_agency_phoneNum, kk_agency_type, kk_agency_file_path, kk_agency_approve_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
           // console.log(insert_query);
 
           // INSERT Value 명시
@@ -389,7 +375,7 @@ const signupController = {
             attr7: uploadFile.data.webContentLink,
             attr8: 0,
           };
-          // console.log(insert_value);
+          // console.log(insert_value_obj);
 
           // 계정 생성 (비동기 처리)
           connection_KK.query(
