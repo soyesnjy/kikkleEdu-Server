@@ -4,11 +4,16 @@ const router = express.Router();
 const { errController } = require("../controller/index");
 const { mypageController } = require("../controller/mypage");
 
-const { getKKTeacherAttendDataRead, postKKTeacherAttendDataUpdate } =
-  mypageController;
+const {
+  getKKTeacherAttendDataRead,
+  postKKTeacherAttendDataUpdate,
+  getKKAgencyReservationDataRead,
+} = mypageController;
 
-router.get("/read", getKKTeacherAttendDataRead);
-router.post("/update", postKKTeacherAttendDataUpdate);
+router.get("/teacher/read", getKKTeacherAttendDataRead);
+router.post("/teacher/update", postKKTeacherAttendDataUpdate);
+
+router.get("/agency/read", getKKAgencyReservationDataRead);
 
 // 에러 메세지 처리
 router.use(errController.errMessageHandler);
