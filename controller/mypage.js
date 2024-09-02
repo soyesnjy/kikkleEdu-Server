@@ -37,7 +37,7 @@ const mypageController = {
     console.log("KK Teacher Attend Data READ API 호출");
     try {
       const { pageNum, userIdx, agencyIdx } = req.query;
-      console.log(req.query);
+      // console.log(req.query);
       // 클라이언트로부터 페이지 번호 받기 (기본값: 1)
       // console.log(pageNum);
       const page = pageNum || 1;
@@ -83,7 +83,7 @@ ${
 AND r.kk_reservation_approve_status = '1'
 ORDER BY a.kk_attend_date DESC LIMIT ? OFFSET ?;
 `;
-        console.log(select_query);
+        // console.log(select_query);
         const select_values = [limit, offset];
         // 데이터베이스 쿼리 실행
         connection_KK.query(select_query, select_values, (err, data) => {
@@ -97,7 +97,7 @@ ORDER BY a.kk_attend_date DESC LIMIT ? OFFSET ?;
               data: [],
             });
           }
-          console.log(data);
+          // console.log(data);
           // 결과 반환
           return res.status(200).json({
             message: "User SignUp Request READ Success! - 200",
@@ -172,7 +172,7 @@ ORDER BY a.kk_attend_date DESC LIMIT ? OFFSET ?;
         const count_query = `SELECT COUNT(*) FROM kk_reservation WHERE kk_agency_idx = '${keyValue}'`;
         const count_data = await fetchUserData(connection_KK, count_query);
         const lastPageNum = Math.ceil(count_data[0]["COUNT(*)"] / limit);
-        console.log(lastPageNum);
+        // console.log(lastPageNum);
 
         // SQL 쿼리 준비: 최신순으로 유저 데이터 가져오기
         // const select_query = `SELECT * FROM ${user_table} WHERE kk_${userClass}_approve_status = '0' ORDER BY kk_${userClass}_created_at DESC LIMIT ? OFFSET ?`;
