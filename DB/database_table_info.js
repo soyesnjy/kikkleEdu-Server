@@ -370,10 +370,11 @@ const KK_User_Table_Info = {
       attr8: "kk_teacher_dayofweek", // Array String
       attr9: "kk_teacher_history",
       attr10: "kk_teacher_education",
-      attr11: "kk_teacher_file_path", // drive 저장 path
-      attr12: "kk_teacher_approve_status", // default: 0, 관리자 수정
-      attr13: "kk_teacher_created_at",
-      attr14: "kk_teacher_updated_at",
+      attr11: "kk_teacher_time",
+      attr12: "kk_teacher_file_path", // drive 저장 path
+      attr13: "kk_teacher_approve_status", // default: 0, 관리자 수정
+      attr14: "kk_teacher_created_at",
+      attr15: "kk_teacher_updated_at",
     },
   },
   agency: {

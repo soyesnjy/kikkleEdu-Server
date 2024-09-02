@@ -255,6 +255,7 @@ const signupController = {
         possLocal, // 강사 수업 가능 지역
         possDay, // 강사 수업 가능 요일
         possClass, // 강사 가능 수업
+        possTime,
         career, // 강사 경력
         education, // 강사 학력
         fileData, // 첨부파일 공통
@@ -300,7 +301,7 @@ const signupController = {
           const uploadFile = await fileDriveSave(fileData);
 
           // 2024.08.30: import 에러로 인한 String 처리
-          const insert_query = `INSERT INTO kk_teacher (kk_teacher_uid, kk_teacher_pwd, kk_teacher_introduction, kk_teacher_name, kk_teacher_phoneNum, kk_teacher_profileImg_path, kk_teacher_location, kk_teacher_dayofweek, kk_teacher_history, kk_teacher_education, kk_teacher_file_path, kk_teacher_approve_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+          const insert_query = `INSERT INTO kk_teacher (kk_teacher_uid, kk_teacher_pwd, kk_teacher_introduction, kk_teacher_name, kk_teacher_phoneNum, kk_teacher_profileImg_path, kk_teacher_location, kk_teacher_dayofweek, kk_teacher_history, kk_teacher_education, kk_teacher_time, kk_teacher_file_path, kk_teacher_approve_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
           // console.log(insert_query);
 
           // INSERT Value 명시
@@ -315,8 +316,9 @@ const signupController = {
             attr8: possDay.sort((a, b) => a - b).join("/"),
             attr9: career,
             attr10: education,
-            attr11: uploadFile.data.webViewLink, // 첨부파일 경로
-            attr12: 0,
+            attr11: possTime, // 강사 희망 시간대
+            attr12: uploadFile.data.webViewLink, // 첨부파일 경로
+            attr13: 0,
           };
           // console.log(insert_value_obj);
 
