@@ -53,6 +53,7 @@ const ReservationController = {
     r.kk_reservation_idx,
     r.kk_teacher_idx,
     r.kk_reservation_date,
+    r.kk_reservation_time,
     r.kk_reservation_approve_status,
     r.kk_class_idx,
     c.kk_class_title,
