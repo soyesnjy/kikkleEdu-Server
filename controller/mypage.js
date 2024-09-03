@@ -34,7 +34,7 @@ async function fetchUserData(connection, query) {
 const mypageController = {
   // KK Teacher Attend Data READ
   getKKTeacherAttendDataRead: async (req, res) => {
-    console.log("KK Teacher Attend Data READ API 호출");
+    // console.log("KK Teacher Attend Data READ API 호출");
     try {
       const { pageNum, userIdx, agencyIdx } = req.query;
       // console.log(req.query);
@@ -156,7 +156,7 @@ ORDER BY a.kk_attend_date DESC LIMIT ? OFFSET ?;
   },
   // KK Agency Reservation Data READ
   getKKAgencyReservationDataRead: async (req, res) => {
-    console.log("KK Agency Reservation Data READ API 호출");
+    // console.log("KK Agency Reservation Data READ API 호출");
     try {
       const { pageNum, userIdx } = req.query;
       // 클라이언트로부터 페이지 번호 받기 (기본값: 1)
@@ -203,6 +203,7 @@ ORDER BY r.kk_reservation_created_at DESC LIMIT ? OFFSET ?;
               data: [],
             });
           }
+
           // 결과 반환
           return res.status(200).json({
             message: "User SignUp Request READ Success! - 200",
