@@ -316,7 +316,7 @@ const signupController = {
             attr8: possDay.sort((a, b) => a - b).join("/"),
             attr9: career,
             attr10: education,
-            attr11: possTime, // 강사 희망 시간대
+            attr11: possTime.sort((a, b) => a - b).join("/"), // 강사 희망 시간대
             attr12: uploadFile.data.webViewLink, // 첨부파일 경로
             attr13: 0,
           };
