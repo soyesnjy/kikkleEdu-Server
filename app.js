@@ -41,8 +41,8 @@ app.use(
 );
 
 // BodyParser 추가. post, put 요청의 req.body 구문 해석 기능 제공.
-app.use(express.json({ limit: "50mb" }));
-app.use(express.urlencoded({ limit: "50mb", extended: true }));
+app.use(express.json({ limit: "100mb" }));
+app.use(express.urlencoded({ limit: "100mb", extended: true }));
 
 // cookie-parser 추가.
 const cookieParser = require("cookie-parser");
