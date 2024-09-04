@@ -4,10 +4,15 @@ const router = express.Router();
 const { errController } = require("../controller/index");
 const { directoryController } = require("../controller/directory");
 
-const { getDirectoryDataRead, postDirectoryDataCreate } = directoryController;
+const {
+  getDirectoryDataRead,
+  postDirectoryDataCreate,
+  deleteDirectoryDataDelete,
+} = directoryController;
 
 router.get("/", getDirectoryDataRead);
 router.post("/create", postDirectoryDataCreate);
+router.delete("/delete", deleteDirectoryDataDelete);
 
 // router.post("/consulting_emotion_pupu", postOpenAIConsultingPupu);
 

@@ -1,11 +1,18 @@
 const stream = require("stream");
+const util = require("util");
 // MySQL 접근
 const mysql = require("mysql");
-const { dbconfig_ai } = require("../DB/database");
-
+const { dbconfig_ai, dbconfig_kk } = require("../DB/database");
 // AI DB 연결
 const connection_AI = mysql.createConnection(dbconfig_ai);
 connection_AI.connect();
+
+// 키클 DB 연결
+const connection_KK = mysql.createConnection(dbconfig_kk);
+connection_KK.connect();
+
+// 쿼리 실행을 Promise로 변환
+const query = util.promisify(connection_KK.query).bind(connection_KK);
 
 const { Review_Table_Info } = require("../DB/database_table_info");
 
@@ -26,15 +33,6 @@ const auth_google_drive = new google.auth.JWT({
   key: serviceAccount.private_key,
   scopes: ["https://www.googleapis.com/auth/drive"],
 });
-
-// const userToImpersonate = "soyesnjy@gmail.com"; // 드라이브 접근을 허용한 사용자의 이메일
-// const auth_google_drive = new google.auth.JWT(
-//   serviceAccount.client_email,
-//   null,
-//   serviceAccount.private_key,
-//   ["https://www.googleapis.com/auth/drive"],
-//   userToImpersonate // 특정 사용자 대리 설정
-// );
 
 const drive = google.drive({ version: "v3", auth: auth_google_drive });
 
@@ -119,17 +117,117 @@ async function fetchUserData(connection, query) {
   }
 }
 
+const fileDriveSave = async (fileData) => {
+  try {
+    // 첨부파일 Google Drive 저장
+    const { fileName, fileType, baseData } = fileData;
+    const [baseType, zipBase64] = baseData.split(",");
+    const bufferStream = new stream.PassThrough();
+    bufferStream.end(Buffer.from(zipBase64, "base64"));
+
+    const fileMetadata = {
+      name: fileName,
+    };
+
+    const media = {
+      mimeType: fileType,
+      body: bufferStream,
+    };
+
+    // 파일 업로드
+    const file = await drive.files.create({
+      resource: fileMetadata,
+      media: media,
+      fields: "id, webViewLink, webContentLink",
+    });
+
+    // 파일을 Public으로 설정
+    await drive.permissions.create({
+      fileId: file.data.id,
+      requestBody: {
+        role: "reader",
+        type: "anyone",
+      },
+    });
+
+    // 특정 계정에게 파일 공유 설정 (writer 권한)
+    await drive.permissions.create({
+      fileId: file.data.id,
+      requestBody: {
+        role: "writer",
+        type: "user",
+        emailAddress: "soyesnjy@gmail.com",
+      },
+    });
+
+    // Public URL을 가져오기 위해 파일 정보를 다시 가져옴
+    const uploadFile = await drive.files.get({
+      fileId: file.data.id,
+      fields: "id, webViewLink, webContentLink",
+    });
+
+    return uploadFile;
+  } catch (error) {
+    console.error("Error saving file to Google Drive:", error.message);
+    throw new Error("Failed to save file to Google Drive.");
+  }
+};
+
+const getSubDirectoriesAndFiles = async (parentId) => {
+  const subItems = [];
+
+  try {
+    // 하위 디렉터리와 파일을 조회
+    const rows = await query(
+      `SELECT kk_directory_idx, kk_directory_type
+       FROM kk_directory 
+       WHERE kk_directory_parent_idx = ?`,
+      [parentId]
+    );
+
+    for (const row of rows) {
+      if (row.kk_directory_type === "file") {
+        // 파일 정보 가져오기
+        const fileRows = await query(
+          `SELECT kk_file_data_id 
+           FROM kk_file 
+           WHERE kk_directory_idx = ?`,
+          [row.kk_directory_idx]
+        );
+        subItems.push({
+          ...row,
+          files: fileRows.map((file) => file.kk_file_data_id),
+        });
+      } else if (row.kk_directory_type === "directory") {
+        // 하위 디렉터리 검색 (재귀 호출)
+        const subDirectoryItems = await getSubDirectoriesAndFiles(
+          row.kk_directory_idx
+        );
+        subItems.push(...subDirectoryItems);
+      }
+    }
+
+    return subItems;
+  } catch (error) {
+    console.error("Error fetching directories and files:", error);
+    throw error;
+  }
+};
+
 const directoryController = {
   // Directory READ
   getDirectoryDataRead: async (req, res) => {
-    console.log("Directory READ API 호출");
-
+    // console.log("KK Directory READ API 호출");
+    const { form } = req.query; // TODO# 유형별 데이터 조회시 사용
     try {
       const directories = await fetchUserData(
-        connection_AI,
-        "SELECT * FROM directories"
+        connection_KK,
+        `SELECT * FROM kk_directory WHERE kk_directory_form = '${form}'`
       );
-      const tracks = await fetchUserData(connection_AI, "SELECT * FROM tracks");
+      const tracks = await fetchUserData(
+        connection_KK,
+        `SELECT * FROM kk_file WHERE kk_file_form = '${form}'`
+      );
       // console.log({ directories, tracks }); // 로그
       return res.status(200).json({ directories, tracks });
     } catch (error) {
@@ -139,9 +237,7 @@ const directoryController = {
   },
   // Directory CREATE
   postDirectoryDataCreate: async (req, res) => {
-    console.log(
-      `Directory CREATE (Google Drive 음원 파일/디렉토리 업로드 API 호출)`
-    );
+    console.log("KK Directory CREATE API 호출");
     let parseData;
     try {
       const { data } = req.body;
@@ -151,50 +247,13 @@ const directoryController = {
       } else parseData = data;
       // console.log(parseData);
 
+      const { type } = parseData;
+
       // file 생성인 경우
-      if (parseData.type === "file") {
-        const { trackName, mimeType, trackData, directoryId } = parseData;
-        const [type, audioBase64] = trackData.split(",");
+      if (type === "file") {
+        const { fileData, directoryId, form } = parseData;
 
-        const bufferStream = new stream.PassThrough();
-        bufferStream.end(Buffer.from(audioBase64, "base64"));
-
-        const fileMetadata = {
-          name: trackName,
-          // parents: ["1Uh3IItyYkTOW-t4qzT_8zpn2G9bp9nhC"], // 공유 폴더 ID를 입력하세요.
-        };
-
-        const media = {
-          mimeType,
-          body: bufferStream,
-        };
-
-        // 파일 업로드
-        const file = await drive.files.create({
-          resource: fileMetadata,
-          media: media,
-          fields: "id, webViewLink, webContentLink",
-        });
-
-        // 파일을 Public으로 설정
-        await drive.permissions.create({
-          fileId: file.data.id,
-          requestBody: {
-            role: "reader",
-            type: "anyone",
-          },
-        });
-
-        // soyesnjy@gmail.com 계정에게 파일 공유 설정 (writer 권한)
-        await drive.permissions.create({
-          fileId: file.data.id,
-          requestBody: {
-            role: "writer",
-            type: "user",
-            emailAddress: "soyesnjy@gmail.com",
-          },
-          // transferOwnership: true, // role:'owner' 일 경우
-        });
+        const file = await fileDriveSave(fileData);
 
         // Public URL을 가져오기 위해 파일 정보를 다시 가져옴
         // const updatedFile = await drive.files.get({
@@ -210,27 +269,37 @@ const directoryController = {
 
         const fileUrl = `https://drive.google.com/file/d/${file.data.id}/preview`;
 
-        connection_AI.query(
-          "INSERT INTO directories (name, parent_id, type) VALUES (?, ?, ?)",
-          [trackName, directoryId, "file"],
+        connection_KK.query(
+          "INSERT INTO kk_directory (kk_directory_name, kk_directory_parent_idx, kk_directory_type, kk_directory_form) VALUES (?, ?, ?, ?)",
+          [fileData.fileName, directoryId, "file", form],
           (error, results) => {
             if (error) {
-              console.error("Database error:", error);
-              return res.status(500).json({ message: "Database error" });
+              console.error(error.sqlMessage);
+              return res
+                .status(400)
+                .json({ message: "kk_directory INSERT Error" });
             }
             const fileId = results.insertId;
 
-            connection_AI.query(
-              "INSERT INTO tracks (directory_id, url, title) VALUES (?, ?, ?)",
-              [fileId, fileUrl, trackName],
+            connection_KK.query(
+              "INSERT INTO kk_file (kk_directory_idx, kk_file_path, kk_file_name, kk_file_data_id, kk_file_form) VALUES (?, ?, ?, ?, ?)",
+              [
+                fileId,
+                fileUrl,
+                fileData.fileName,
+                file.data.id,
+                form || "music",
+              ],
               (error) => {
                 if (error) {
                   console.error("Database error:", error);
-                  return res.status(500).json({ message: "Database error" });
+                  return res
+                    .status(400)
+                    .json({ message: "kk_file INSERT Error" });
                 }
                 return res.status(200).json({
                   id: fileId,
-                  name: trackName,
+                  name: fileData.fileName,
                   parent_id: directoryId,
                   type: "file",
                   url: fileUrl,
@@ -241,12 +310,12 @@ const directoryController = {
         );
       }
       // Directory 생성인 경우
-      else if (parseData.type === "directory") {
-        const { directoryName, directoryId, type } = parseData;
+      else if (type === "directory") {
+        const { directoryName, directoryId, type, form } = parseData;
 
-        connection_AI.query(
-          "INSERT INTO directories (name, parent_id, type) VALUES (?, ?, ?)",
-          [directoryName, directoryId || null, type],
+        connection_KK.query(
+          "INSERT INTO kk_directory (kk_directory_name, kk_directory_parent_idx, kk_directory_type, kk_directory_form) VALUES (?, ?, ?, ?)",
+          [directoryName, directoryId || null, type, form],
           (error, results) => {
             if (error) {
               console.error("Database error:", error);
@@ -267,7 +336,7 @@ const directoryController = {
       res.status(500).send(error.message);
     }
   },
-  // Directory UPDATE
+  // TODO# Directory UPDATE
   postDirectoryDataUpdate: (req, res) => {
     console.log("ReviewData UPDATE API 호출");
     const { ReviewData } = req.body;
@@ -338,23 +407,48 @@ const directoryController = {
     }
   },
   // Directory DELETE
-  deleteDirectoryDataDelete: (req, res) => {
-    console.log("ReviewData DELETE API 호출");
-    const { id } = req.params;
-
+  deleteDirectoryDataDelete: async (req, res) => {
+    console.log("KK Directory DELETE API 호출");
+    const { directoryIdx, type } = req.query;
     try {
-      const review_table = Review_Table_Info.table;
-      const delete_query = `DELETE FROM ${review_table} WHERE entry_id = ?`;
+      // Drive Data Delete
+      // 파일인 경우
+      if (type === "file") {
+        const select_data = await query(
+          `SELECT kk_file_data_id 
+           FROM kk_file 
+           WHERE kk_directory_idx = ?`,
+          [directoryIdx]
+        );
+        await drive.files.delete({ fileId: select_data[0].kk_file_data_id });
+        console.log("drive data delete complete");
+      }
+      // 폴더인 경우
+      else if (type === "directory") {
+        const itemsToDelete = await getSubDirectoriesAndFiles(directoryIdx);
 
-      connection_AI.query(delete_query, [id], (err) => {
-        if (err) {
-          console.log("Review_Log DB Delete Fail!");
-          console.log("Err sqlMessage: " + err.sqlMessage);
-          res.json({ message: "Err sqlMessage: " + err.sqlMessage });
-        } else {
-          console.log("Review_Log DB Delete Success!");
-          res.status(200).json({ message: "Review_Log DB Delete Success!" });
+        for (const item of itemsToDelete) {
+          if (item.kk_directory_type === "file" && item.files) {
+            for (const fileId of item.files) {
+              await drive.files.delete({ fileId: fileId });
+            }
+          }
         }
+      }
+
+      // DB Table Data Delete
+      const delete_query = `DELETE FROM kk_directory WHERE kk_directory_idx = ?`;
+      connection_KK.query(delete_query, [directoryIdx], async (err) => {
+        if (err) {
+          console.log(err);
+          return res.status(400).json({ message: err.sqlMessage });
+        }
+        // await drive.files.delete({ fileId: file.id });
+
+        console.log("Directory DB Delete Success!");
+        return res
+          .status(200)
+          .json({ message: "Directory DB Delete Success!" });
       });
     } catch (err) {
       console.log(err);
