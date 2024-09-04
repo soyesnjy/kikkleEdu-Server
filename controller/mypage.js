@@ -36,7 +36,7 @@ const mypageController = {
   getKKTeacherAttendDataRead: async (req, res) => {
     // console.log("KK Teacher Attend Data READ API 호출");
     try {
-      const { pageNum, userIdx, agencyIdx } = req.query;
+      const { pageNum, userIdx, agencyIdx, name } = req.query;
       // console.log(req.query);
       // 클라이언트로부터 페이지 번호 받기 (기본값: 1)
       // console.log(pageNum);
@@ -51,11 +51,15 @@ const mypageController = {
         const count_query = `SELECT COUNT(*)
 FROM kk_attend AS a
 JOIN kk_reservation AS r ON a.kk_reservation_idx = r.kk_reservation_idx
+JOIN kk_teacher AS t ON r.kk_teacher_idx = t.kk_teacher_idx
 ${
   agencyIdx
-    ? `WHERE r.kk_agency_idx = '${keyValue}'`
-    : `WHERE r.kk_teacher_idx = '${keyValue}'`
-} AND r.kk_reservation_approve_status = '1'`;
+    ? `WHERE r.kk_agency_idx = '${keyValue}' AND r.kk_reservation_approve_status = '1'`
+    : userIdx
+    ? `WHERE r.kk_teacher_idx = '${keyValue}' AND r.kk_reservation_approve_status = '1'`
+    : `WHERE r.kk_reservation_approve_status = '1'`
+} ${name ? `AND t.kk_teacher_name LIKE '%${name}%'` : ""}`;
+
         const count_data = await fetchUserData(connection_KK, count_query);
         const lastPageNum = Math.ceil(count_data[0]["COUNT(*)"] / limit);
         // console.log(lastPageNum);
@@ -66,6 +70,7 @@ ${
     c.kk_class_title,
     t.kk_teacher_name,
     t.kk_teacher_phoneNum,
+    r.kk_reservation_time,
     a.kk_attend_idx,
     a.kk_attend_date,
     a.kk_attend_status,
@@ -77,10 +82,11 @@ JOIN kk_class AS c ON r.kk_class_idx = c.kk_class_idx
 JOIN kk_agency AS ag ON r.kk_agency_idx = ag.kk_agency_idx
 ${
   agencyIdx
-    ? `WHERE r.kk_agency_idx = '${keyValue}'`
-    : `WHERE r.kk_teacher_idx = '${keyValue}'`
-}
-AND r.kk_reservation_approve_status = '1'
+    ? `WHERE r.kk_agency_idx = '${keyValue}' AND r.kk_reservation_approve_status = '1'`
+    : userIdx
+    ? `WHERE r.kk_teacher_idx = '${keyValue}' AND r.kk_reservation_approve_status = '1'`
+    : `WHERE r.kk_reservation_approve_status = '1'`
+} ${name ? `AND t.kk_teacher_name LIKE '%${name}%'` : ""}
 ORDER BY a.kk_attend_date DESC LIMIT ? OFFSET ?;
 `;
         // console.log(select_query);
