@@ -448,6 +448,20 @@ const KK_User_Table_Info = {
       attr5: "kk_attend_updated_at",
     },
   },
+  board: {
+    table: "kk_board",
+    attribute: {
+      pKey: "kk_board_idx",
+      attr1: "kk_agency_idx",
+      attr2: "kk_board_type",
+      attr3: "kk_board_title",
+      attr4: "kk_board_content",
+      attr5: "kk_board_reply",
+      attr6: "kk_board_private",
+      attr7: "kk_board_created_at",
+      attr8: "kk_board_updated_at",
+    },
+  },
 };
 
 module.exports = {
