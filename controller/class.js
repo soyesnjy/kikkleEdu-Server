@@ -1,10 +1,6 @@
 // MySQL 접근
 const mysql = require("mysql");
-const { dbconfig_ai, dbconfig_kk } = require("../DB/database");
-
-// AI DB 연결
-const connection_AI = mysql.createConnection(dbconfig_ai);
-connection_AI.connect();
+const { dbconfig_kk } = require("../DB/database");
 
 // 키클 DB 연결
 const connection_KK = mysql.createConnection(dbconfig_kk);
@@ -155,7 +151,7 @@ const classController = {
       ];
       // console.log(consult_insert_value);
 
-      connection_AI.query(class_insert_query, class_insert_value, (err) => {
+      connection_KK.query(class_insert_query, class_insert_value, (err) => {
         if (err) {
           console.log("Err sqlMessage: " + err.sqlMessage);
           res.json({ message: "Err sqlMessage: " + err.sqlMessage });
@@ -200,7 +196,7 @@ const classController = {
       const review_select_query = `SELECT ${review_pKey} FROM ${review_table} WHERE ${review_pKey} = ${parseEnteyID}`;
 
       // Select Query
-      connection_AI.query(review_select_query, [], (err, data) => {
+      connection_KK.query(review_select_query, [], (err, data) => {
         if (err) {
           console.log("Review_Log DB Select Fail!");
           console.log("Err sqlMessage: " + err.sqlMessage);
@@ -211,7 +207,7 @@ const classController = {
             const review_update_query = `UPDATE ${review_table} SET ${review_attribute.attr2} = ? WHERE ${review_pKey} = ?`;
             const review_update_value = [parseContent, parseEnteyID];
             // Update Query
-            connection_AI.query(
+            connection_KK.query(
               review_update_query,
               review_update_value,
               (err) => {
@@ -248,7 +244,7 @@ const classController = {
       const review_table = Review_Table_Info.table;
       const delete_query = `DELETE FROM ${review_table} WHERE entry_id = ?`;
 
-      connection_AI.query(delete_query, [id], (err) => {
+      connection_KK.query(delete_query, [id], (err) => {
         if (err) {
           console.log("Review_Log DB Delete Fail!");
           console.log("Err sqlMessage: " + err.sqlMessage);

@@ -5,7 +5,7 @@ const mysql = require("mysql");
 const { dbconfig_ai, dbconfig_kk } = require("../DB/database");
 // AI DB 연결
 const connection_AI = mysql.createConnection(dbconfig_ai);
-connection_AI.connect();
+// connection_AI.connect();
 
 // 키클 DB 연결
 const connection_KK = mysql.createConnection(dbconfig_kk);
@@ -367,7 +367,7 @@ const directoryController = {
       const review_select_query = `SELECT ${review_pKey} FROM ${review_table} WHERE ${review_pKey} = ${parseEnteyID}`;
 
       // Select Query
-      connection_AI.query(review_select_query, [], (err, data) => {
+      connection_KK.query(review_select_query, [], (err, data) => {
         if (err) {
           console.log("Review_Log DB Select Fail!");
           console.log("Err sqlMessage: " + err.sqlMessage);
@@ -378,7 +378,7 @@ const directoryController = {
             const review_update_query = `UPDATE ${review_table} SET ${review_attribute.attr2} = ? WHERE ${review_pKey} = ?`;
             const review_update_value = [parseContent, parseEnteyID];
             // Update Query
-            connection_AI.query(
+            connection_KK.query(
               review_update_query,
               review_update_value,
               (err) => {

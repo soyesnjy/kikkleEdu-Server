@@ -153,55 +153,60 @@ const user_kk_select = async (user_table, user_attribute, parsepUid) => {
 };
 
 const fileDriveSave = async (fileData) => {
-  // 첨부파일 Google Drive 저장
-  const { fileName, fileType, baseData } = fileData;
-  const [baseType, zipBase64] = baseData.split(",");
-  const bufferStream = new stream.PassThrough();
-  bufferStream.end(Buffer.from(zipBase64, "base64"));
+  try {
+    // 첨부파일 Google Drive 저장
+    const { fileName, fileType, baseData } = fileData;
+    const [baseType, zipBase64] = baseData.split(",");
+    const bufferStream = new stream.PassThrough();
+    bufferStream.end(Buffer.from(zipBase64, "base64"));
 
-  const fileMetadata = {
-    name: fileName,
-  };
+    const fileMetadata = {
+      name: fileName,
+    };
 
-  const media = {
-    mimeType: fileType,
-    body: bufferStream,
-  };
+    const media = {
+      mimeType: fileType,
+      body: bufferStream,
+    };
 
-  // 파일 업로드
-  const file = await drive.files.create({
-    resource: fileMetadata,
-    media: media,
-    fields: "id, webViewLink, webContentLink",
-  });
+    // 파일 업로드
+    const file = await drive.files.create({
+      resource: fileMetadata,
+      media: media,
+      fields: "id, webViewLink, webContentLink",
+    });
 
-  // 파일을 Public으로 설정
-  await drive.permissions.create({
-    fileId: file.data.id,
-    requestBody: {
-      role: "reader",
-      type: "anyone",
-    },
-  });
+    // 파일을 Public으로 설정
+    await drive.permissions.create({
+      fileId: file.data.id,
+      requestBody: {
+        role: "reader",
+        type: "anyone",
+      },
+    });
 
-  // soyesnjy@gmail.com 계정에게 파일 공유 설정 (writer 권한)
-  await drive.permissions.create({
-    fileId: file.data.id,
-    requestBody: {
-      role: "writer",
-      type: "user",
-      emailAddress: "soyesnjy@gmail.com",
-    },
-    // transferOwnership: true, // role:'owner' 일 경우
-  });
+    // soyesnjy@gmail.com 계정에게 파일 공유 설정 (writer 권한)
+    await drive.permissions.create({
+      fileId: file.data.id,
+      requestBody: {
+        role: "writer",
+        type: "user",
+        emailAddress: "soyesnjy@gmail.com",
+      },
+      // transferOwnership: true, // role:'owner' 일 경우
+    });
 
-  // Public URL을 가져오기 위해 파일 정보를 다시 가져옴
-  const uploadFile = await drive.files.get({
-    fileId: file.data.id,
-    fields: "id, webViewLink, webContentLink",
-  });
+    // Public URL을 가져오기 위해 파일 정보를 다시 가져옴
+    const uploadFile = await drive.files.get({
+      fileId: file.data.id,
+      fields: "id, webViewLink, webContentLink",
+    });
 
-  return uploadFile;
+    return uploadFile;
+  } catch (err) {
+    console.log(err);
+    return;
+  }
 };
 
 const signupController = {
@@ -300,7 +305,12 @@ const signupController = {
         if (userClass === "teacher") {
           // Public URL을 가져오기 위해 파일 정보를 다시 가져옴
           const uploadFile = await fileDriveSave(fileData);
-
+          if (!uploadFile) {
+            console.log("SignUp File Drive Upload Fail - 400");
+            return res
+              .status(400)
+              .json({ message: "SignUp File Drive Upload Fail - 400" });
+          }
           // 2024.08.30: import 에러로 인한 String 처리
           const insert_query = `INSERT INTO kk_teacher (kk_teacher_uid, kk_teacher_pwd, kk_teacher_introduction, kk_teacher_name, kk_teacher_phoneNum, kk_teacher_profileImg_path, kk_teacher_location, kk_teacher_dayofweek, kk_teacher_history, kk_teacher_education, kk_teacher_time, kk_teacher_file_path, kk_teacher_approve_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
           // console.log(insert_query);

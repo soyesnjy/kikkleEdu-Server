@@ -8,8 +8,7 @@ const connection_AI = mysql.createConnection(dbconfig_ai);
 connection_AI.connect();
 // 키클 DB 연결
 const connection_KK = mysql.createConnection(dbconfig_kk);
-connection_KK.connect();
-// connection.end(); // 언제쓰지?
+// connection_KK.connect();
 
 // const { users } = require("../DB/database");
 const moment = require("moment-timezone");

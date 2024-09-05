@@ -3,7 +3,7 @@ const mysql = require("mysql");
 const { dbconfig, dbconfig_ai } = require("../DB/database");
 // Tips DB 연결
 const connection = mysql.createConnection(dbconfig);
-connection.connect();
+// connection.connect();
 // AI DB 연결
 // const connection_AI = mysql.createConnection(dbconfig_ai);
 // connection_AI.connect();

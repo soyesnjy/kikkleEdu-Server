@@ -8,7 +8,7 @@ const { dbconfig, dbconfig_ai } = require("../DB/database");
 // connection.connect();
 // AI DB 연결
 const connection_AI = mysql.createConnection(dbconfig_ai);
-connection_AI.connect();
+// connection_AI.connect();
 
 // kakaopay 관련
 const axios = require("axios");

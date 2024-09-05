@@ -4,7 +4,7 @@ const router = express.Router();
 const { errController } = require("../controller/index");
 const {
   signupController,
-  signupController_Regercy,
+  // signupController_Regercy,
 } = require("../controller/signup");
 const {
   postSignupDataCreate,

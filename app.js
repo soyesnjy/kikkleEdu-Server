@@ -116,8 +116,8 @@ app.get("/", (req, res) => {
 });
 
 // path 경로 라우팅
-const pathRouter = require("./router/path");
-app.use("/path", pathRouter);
+// const pathRouter = require("./router/path");
+// app.use("/path", pathRouter);
 // error 경로 라우팅
 const errorRouter = require("./router/error");
 app.use("/error", errorRouter);
@@ -133,12 +133,14 @@ app.use("/directory", directoryRouter);
 
 // AI
 // openAI 경로 라우팅
-const openAIRouter = require("./router/openAI");
-app.use("/openAI", openAIRouter);
+// const openAIRouter = require("./router/openAI");
+// app.use("/openAI", openAIRouter);
+
 const reviewRouter = require("./router/review");
 app.use("/review", reviewRouter);
-const kakaoPayRouter = require("./router/kakaoPay");
-app.use("/kakaopay", kakaoPayRouter);
+
+// const kakaoPayRouter = require("./router/kakaoPay");
+// app.use("/kakaopay", kakaoPayRouter);
 
 // Kikle Edu
 // 수업 관련 Router
