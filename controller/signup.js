@@ -256,6 +256,7 @@ const signupController = {
         possDay, // 강사 수업 가능 요일
         possClass, // 강사 가능 수업
         possTime,
+        introduce, // 강사 소개글
         career, // 강사 경력
         education, // 강사 학력
         fileData, // 첨부파일 공통
@@ -308,7 +309,7 @@ const signupController = {
           const insert_value_obj = {
             attr1: pUid,
             attr2: passWord,
-            attr3: "", // 강사 소개글 (관리자)
+            attr3: introduce, // 강사 소개글 (관리자)
             attr4: name,
             attr5: phoneNumber,
             attr6: "", // 강사 프로필 사진 (관리자)
