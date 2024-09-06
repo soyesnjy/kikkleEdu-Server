@@ -47,6 +47,7 @@ const BoardController = {
       const lastPageNum = Math.ceil(count_data[0]["COUNT(*)"] / limit);
       // console.log(lastPageNum);
       let select_query;
+      // Board Detail Data Return Query
       if (boardIdx) {
         select_query = `SELECT 
       b.kk_board_title,
@@ -63,7 +64,9 @@ const BoardController = {
   ORDER BY 
       b.kk_board_created_at DESC LIMIT ? OFFSET ?;
   `;
-      } else {
+      }
+      // Board List Data Return Query
+      else {
         select_query = `SELECT 
       b.kk_board_idx,
       b.kk_board_type,
@@ -120,7 +123,7 @@ const BoardController = {
       res.status(500).json({ message: "Server Error - 500" });
     }
   },
-  // TODO# KK Board Data CREATE
+  // KK Board Data CREATE
   postKKBoardDataCreate: async (req, res) => {
     const { data } = req.body;
     // console.log(data);
@@ -135,51 +138,47 @@ const BoardController = {
 
       const {
         // 예약 데이터
-        agencyIdx, // 기관 idx
-        classIdx, // 수업 idx
-        reservationDate, // 날짜 Array
-        reservationTime, // 수업 시간대 (오전/오후/야간)
-        reservationCand, // 강사 후보 Array
+        agencyIdx, // default userIdx === dummy 계정
+        title,
+        content,
+        isPrivate,
       } = parseData;
 
       // Input 없을 경우
-      if (
-        !agencyIdx ||
-        !classIdx ||
-        !reservationDate.length ||
-        !reservationTime ||
-        !reservationCand.length
-      ) {
+      if (!agencyIdx || !title || !content) {
         return res
           .status(400)
           .json({ message: "Non Input Value - 400 Bad Request" });
       }
 
-      const sortedReservationDate = [
-        ...reservationDate.sort((a, b) => new Date(a) - new Date(b)),
-      ];
-      // console.log(sortedReservationDate);
+      const select_query = `SELECT kk_agency_type FROM kk_agency WHERE kk_agency_idx='${agencyIdx}'`;
+      const select_data = await fetchUserData(connection_KK, select_query);
 
-      // 예약 DB INSERT Reservation
+      // 게시글 DB INSERT
       if (true) {
-        // INSERT Reservation
-        const insert_query = `INSERT INTO kk_reservation (kk_agency_idx, kk_class_idx, kk_teacher_idx, kk_reservation_date, kk_reservation_start_date, kk_reservation_end_date, kk_reservation_time, kk_reservation_approve_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+        // INSERT Board
+        const insert_query = `INSERT INTO kk_board
+        (kk_agency_idx, 
+        kk_board_type, 
+        kk_board_title, 
+        kk_board_content, 
+        kk_board_reply, 
+        kk_board_private) 
+        VALUES (?, ?, ?, ?, ?, ?)`;
         // console.log(insert_query);
 
         // INSERT Value 명시
         const insert_value_obj = {
           attr1: agencyIdx,
-          attr2: classIdx,
-          attr3: null, // 강사 idx. 관리자 페이지에서 update
-          attr4: sortedReservationDate.join("/"),
-          attr5: sortedReservationDate[0],
-          attr6: sortedReservationDate[sortedReservationDate.length - 1],
-          attr7: reservationTime,
-          attr8: 0,
+          attr2: select_data[0].kk_agency_type === "admin" ? "notice" : "",
+          attr3: title, // 강사 idx. 관리자 페이지에서 update
+          attr4: content,
+          attr5: "",
+          attr6: isPrivate ? 1 : 0,
         };
         // console.log(insert_value_obj);
 
-        // 예약 생성
+        // 게시글 생성
         connection_KK.query(
           insert_query,
           Object.values(insert_value_obj),
@@ -188,25 +187,9 @@ const BoardController = {
               console.log(error);
               res.status(400).json({ message: error.sqlMessage });
             } else {
-              // reservation_teacher Table Insert
-              const reservaion_id = rows.insertId; // 삽입한 강사의 pKey
-
-              const insert_query = `INSERT INTO kk_reservation_teacher (kk_reservation_idx, kk_teacher_idx) VALUES ${reservationCand
-                .map((el) => {
-                  return `(${reservaion_id}, ${el})`;
-                })
-                .join(", ")}`;
-
-              connection_KK.query(insert_query, null, (err) => {
-                if (error) {
-                  console.log(error);
-                  res.status(400).json({ message: error.sqlMessage });
-                } else {
-                  console.log("Reservation Row DB INSERT Success!");
-                  res.status(200).json({
-                    message: "Reservation Row DB INSERT Success! - 200 OK",
-                  });
-                }
+              console.log("Board Row DB INSERT Success!");
+              res.status(200).json({
+                message: "Board Row DB INSERT Success! - 200 OK",
               });
             }
           }
@@ -316,20 +299,20 @@ const BoardController = {
       res.status(500).json({ message: "Server Error - 500 Bad Gateway" });
     }
   },
-  // TODO# KK Board Data DELETE
+  // KK Board Data DELETE
   deleteKKBoardDataDelete: (req, res) => {
-    console.log("Reservation Data DELETE API 호출");
-    const { reservationIdx } = req.query;
+    console.log("Board Data DELETE API 호출");
+    const { boardIdx } = req.query;
     try {
-      const delete_query = `DELETE FROM kk_reservation WHERE kk_reservation_idx = ?`;
+      const delete_query = `DELETE FROM kk_board WHERE kk_board_idx = ?`;
 
-      connection_KK.query(delete_query, [reservationIdx], (err) => {
+      connection_KK.query(delete_query, [boardIdx], (err) => {
         if (err) {
           console.log(err);
           res.json({ message: err.sqlMessage });
         } else {
-          console.log("Reservation DB Delete Success!");
-          res.status(200).json({ message: "Reservation DB Delete Success!" });
+          console.log("Board DB Delete Success!");
+          res.status(200).json({ message: "Board DB Delete Success!" });
         }
       });
     } catch (err) {
