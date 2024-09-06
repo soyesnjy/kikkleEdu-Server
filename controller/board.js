@@ -55,7 +55,8 @@ const BoardController = {
       b.kk_board_private,
       b.kk_board_created_at,
       a.kk_agency_type,
-      a.kk_agency_name
+      a.kk_agency_name,
+      a.kk_agency_idx
   FROM 
       kk_board AS b
   JOIN 
@@ -74,7 +75,8 @@ const BoardController = {
       b.kk_board_private,
       b.kk_board_created_at,
       a.kk_agency_type,
-      a.kk_agency_name
+      a.kk_agency_name,
+      a.kk_agency_idx
   FROM 
       kk_board AS b
   JOIN 
@@ -111,6 +113,7 @@ const BoardController = {
               title: row.kk_board_title,
               content: row.kk_board_content ? row.kk_board_content : "",
               author: row.kk_agency_name,
+              authorIdx: row.kk_agency_idx,
               date: row.kk_board_created_at,
               isNotice: row.kk_board_type === "notice",
               isPrivate: row.kk_board_private,
