@@ -17,7 +17,7 @@ const teacherController = {
       const query = req.query;
       const { classIdx, dayofweek, partTime } = query; // classIdx 필수, dayofweek 선택
 
-      parseDayofweek = dayofweek.split(","); // String -> Array
+      parseDayofweek = dayofweek ? dayofweek.split(",") : null; // String -> Array
 
       const teacher_table = KK_User_Table_Info["teacher"].table;
       const teacher_class_table = KK_User_Table_Info["teacher_class"].table;
