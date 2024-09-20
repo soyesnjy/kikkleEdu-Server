@@ -6,7 +6,7 @@ const { dbconfig_kk } = require("../DB/database");
 const connection_KK = mysql.createConnection(dbconfig_kk);
 connection_KK.connect();
 
-const { KK_User_Table_Info } = require("../DB/database_table_info");
+// const { KK_User_Table_Info } = require("../DB/database_table_info");
 
 // 동기식 DB 접근 함수 1. Promise 생성 함수
 function queryAsync(connection, query, parameters) {

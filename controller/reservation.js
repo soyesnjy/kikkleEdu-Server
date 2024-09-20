@@ -40,7 +40,7 @@ const ReservationController = {
       const { date, pageNum } = query; // 날짜 검색
       // console.log(pageNum);
       const page = pageNum || 1;
-      const limit = 5; // 한 페이지에 보여줄 리뷰의 수
+      const limit = 10; // 한 페이지에 보여줄 리뷰의 수
       const offset = (page - 1) * limit;
 
       // Pagination Last Number Select

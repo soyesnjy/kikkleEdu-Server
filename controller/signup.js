@@ -31,96 +31,7 @@ const auth_google_drive = new google.auth.JWT({
 const drive = google.drive({ version: "v3", auth: auth_google_drive });
 
 // Database Table Info
-const {
-  // KK_User_Table_Info,
-} = require("../DB/database_table_info");
-
-const KK_User_Table_Info = {
-  teacher: {
-    table: "kk_teacher",
-    attribute: {
-      pKey: "kk_teacher_idx",
-      attr1: "kk_teacher_uid",
-      attr2: "kk_teacher_pwd",
-      attr3: "kk_teacher_introduction", // default: '', 관리자 수정
-      attr4: "kk_teacher_name",
-      attr5: "kk_teacher_phoneNum",
-      attr6: "kk_teacher_profileImg_path", // default: '', 관리자 수정
-      attr7: "kk_teacher_location",
-      attr8: "kk_teacher_dayofweek", // Array String
-      attr9: "kk_teacher_history",
-      attr10: "kk_teacher_education",
-      attr11: "kk_teacher_file_path", // drive 저장 path
-      attr12: "kk_teacher_approve_status", // default: 0, 관리자 수정
-      attr13: "kk_teacher_created_at",
-      attr14: "kk_teacher_updated_at",
-    },
-  },
-  agency: {
-    table: "kk_agency",
-    attribute: {
-      pKey: "kk_agency_idx",
-      attr1: "kk_agency_uid",
-      attr2: "kk_agency_pwd",
-      attr3: "kk_agency_name",
-      attr4: "kk_agency_address",
-      attr5: "kk_agency_phoneNum",
-      attr6: "kk_agency_type",
-      attr7: "kk_agency_file_path",
-      attr8: "kk_agency_approve_status",
-      attr9: "kk_agency_created_at",
-      attr10: "kk_agency_updated_at",
-    },
-  },
-  class: {
-    table: "kk_class",
-    attribute: {
-      pKey: "kk_class_idx",
-      attr1: "kk_class_title",
-      attr2: "kk_class_content",
-      attr3: "kk_class_type",
-      attr4: "kk_class_file_path",
-      attr5: "kk_class_created_at",
-      attr6: "kk_class_updated_at",
-    },
-  },
-  teacher_class: {
-    table: "kk_teacher_class",
-    attribute: {
-      pKey: "kk_teacher_class_idx",
-      attr1: "kk_teacher_idx",
-      attr2: "kk_class_idx",
-    },
-  },
-  reservation: {
-    table: "kk_reservation",
-    attribute: {
-      pKey: "kk_reservation_idx",
-      attr1: "kk_agency_idx",
-      attr2: "kk_class_idx",
-      attr3: "kk_teacher_idx",
-      attr4: "kk_reservation_date", // Array String
-      attr5: "kk_reservation_start_date",
-      attr6: "kk_reservation_end_date",
-      attr7: "kk_reservation_time",
-      attr8: "kk_reservation_cand_teacher", // Array String
-      attr9: "kk_reservation_approve_status",
-      attr10: "kk_reservation_created_at",
-      attr11: "kk_reservation_updated_at",
-    },
-  },
-  attend: {
-    table: "kk_attend",
-    attribute: {
-      pKey: "kk_attend_idx",
-      attr1: "kk_reservation_idx",
-      attr2: "kk_attend_date",
-      attr3: "kk_attend_status",
-      attr4: "kk_attend_created_at",
-      attr5: "kk_attend_updated_at",
-    },
-  },
-};
+const { KK_User_Table_Info } = require("../DB/database_table_info");
 
 // 동기식 DB 접근 함수 1. Promise 생성 함수
 function queryAsync(connection, query, parameters) {
@@ -420,7 +331,7 @@ const signupController = {
       // 클라이언트로부터 페이지 번호 받기 (기본값: 1)
       // console.log(pageNum);
       const page = pageNum || 1;
-      const limit = 5; // 한 페이지에 보여줄 리뷰의 수
+      const limit = 10; // 한 페이지에 보여줄 리뷰의 수
       const offset = (page - 1) * limit;
 
       if (true) {

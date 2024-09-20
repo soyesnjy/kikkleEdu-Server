@@ -11,7 +11,7 @@ const { KK_User_Table_Info } = require("../DB/database_table_info");
 const teacherController = {
   // KKTeacher Data READ
   getKKTeacherDataRead: (req, res) => {
-    console.log("KK Teacher Data READ API 호출");
+    // console.log("KK Teacher Data READ API 호출");
     let parseDayofweek;
     try {
       const query = req.query;
@@ -23,10 +23,10 @@ const teacherController = {
       const teacher_class_table = KK_User_Table_Info["teacher_class"].table;
 
       const select_query = `
-  SELECT t.kk_teacher_idx, t.kk_teacher_introduction, t.kk_teacher_name 
-  FROM ${teacher_table} AS t 
-  JOIN ${teacher_class_table} AS tc ON t.kk_teacher_idx = tc.kk_teacher_idx 
-  WHERE tc.kk_class_idx = ${classIdx} 
+  SELECT t.kk_teacher_idx, t.kk_teacher_introduction, t.kk_teacher_name
+  FROM ${teacher_table} AS t
+  JOIN ${teacher_class_table} AS tc ON t.kk_teacher_idx = tc.kk_teacher_idx
+  WHERE tc.kk_class_idx = ${classIdx}
   ${
     parseDayofweek
       ? `AND (${parseDayofweek
@@ -34,8 +34,8 @@ const teacherController = {
           .join(" OR ")})`
       : ""
   }
-  ${` AND t.kk_teacher_time LIKE '%${partTime}%'`}
-  ${` AND t.kk_teacher_approve_status = '1'`}
+  ${partTime ? ` AND t.kk_teacher_time LIKE '%${partTime}%'` : ""}
+  AND t.kk_teacher_approve_status = '1'
   ORDER BY t.kk_teacher_created_at DESC;
 `;
 

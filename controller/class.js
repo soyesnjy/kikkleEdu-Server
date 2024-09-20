@@ -84,20 +84,18 @@ const fileDriveSave = async (fileData) => {
 const classController = {
   // KKClass Data READ
   getKKClassDataRead: (req, res) => {
-    console.log("KK Class Data READ API 호출");
+    // console.log("KK Class Data READ API 호출");
     try {
       const query = req.query;
       const { classType } = query;
       const class_table = KK_User_Table_Info["class"].table;
-      const class_attribute = KK_User_Table_Info["class"].attribute;
+      // const class_attribute = KK_User_Table_Info["class"].attribute;
 
       // SQL 쿼리 준비: 최신순으로 class 데이터 가져오기
       // 2024.08.22: query 조회 기능 추가
-      const select_query = `SELECT ${class_attribute.pKey}, ${
-        class_attribute.attr1
-      } FROM ${class_table}${
-        classType ? ` WHERE ${class_attribute.attr3} LIKE '%${classType}%'` : ""
-      } ORDER BY ${class_attribute.attr5} DESC`;
+      const select_query = `SELECT kk_class_idx, kk_class_title FROM ${class_table}
+      ${classType ? `WHERE kk_class_type LIKE '%${classType}%'` : ""}
+      ORDER BY kk_class_created_at ASC`;
 
       // 데이터베이스 쿼리 실행
       connection_KK.query(select_query, null, (err, data) => {
@@ -129,24 +127,30 @@ const classController = {
         parseData = JSON.parse(data);
       } else parseData = data;
 
-      const { kk_class_title, kk_class_content, kk_class_type, fileData } =
-        parseData;
+      const {
+        kk_class_title,
+        kk_class_content,
+        kk_class_type,
+        kk_class_tag,
+        fileData,
+      } = parseData;
       parsepUid = pUid;
 
       // 파일 저장 메서드 호출
       const uploadFile = await fileDriveSave(fileData);
 
       const class_table = KK_User_Table_Info["class"].table;
-      const class_attribute = KK_User_Table_Info["class"].attribute;
+      // const class_attribute = KK_User_Table_Info["class"].attribute;
 
       // Consult_Log DB 저장
-      const class_insert_query = `INSERT INTO ${class_table} (${class_attribute.attr1}, ${class_attribute.attr2}, ${class_attribute.attr3}, ${class_attribute.attr4},) VALUES (?, ?, ?, ?)`;
+      const class_insert_query = `INSERT INTO ${class_table} (kk_class_title, kk_class_content, kk_class_type, kk_class_tag, kk_class_file_path) VALUES (?, ?, ?, ?, ?)`;
       // console.log(consult_insert_query);
 
       const class_insert_value = [
         kk_class_title,
         kk_class_content,
         kk_class_type,
+        kk_class_tag,
         uploadFile.data.webContentLink,
       ];
       // console.log(consult_insert_value);

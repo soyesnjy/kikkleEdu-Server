@@ -400,9 +400,10 @@ const KK_User_Table_Info = {
       attr1: "kk_class_title",
       attr2: "kk_class_content",
       attr3: "kk_class_type",
-      attr4: "kk_class_file_path",
-      attr5: "kk_class_created_at",
-      attr6: "kk_class_updated_at",
+      attr4: "kk_class_tag",
+      attr5: "kk_class_file_path",
+      attr6: "kk_class_created_at",
+      attr7: "kk_class_updated_at",
     },
   },
   teacher_class: {
