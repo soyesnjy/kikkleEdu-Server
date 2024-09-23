@@ -15,19 +15,27 @@ const teacherController = {
     let parseDayofweek;
     try {
       const query = req.query;
-      const { classIdx, dayofweek, partTime } = query; // classIdx 필수, dayofweek 선택
+      const { classIdx, dayofweek, partTime, classTag } = query; // classIdx 필수, dayofweek 선택
+
+      //console.log(query);
 
       parseDayofweek = dayofweek ? dayofweek.split(",") : null; // String -> Array
 
       const teacher_table = KK_User_Table_Info["teacher"].table;
       const teacher_class_table = KK_User_Table_Info["teacher_class"].table;
+      const class_table = KK_User_Table_Info["class"].table;
 
       const select_query = `
-  SELECT t.kk_teacher_idx, t.kk_teacher_introduction, t.kk_teacher_name
+  SELECT DISTINCT t.kk_teacher_idx, t.kk_teacher_introduction, t.kk_teacher_name
   FROM ${teacher_table} AS t
   ${
-    classIdx
+    classIdx || classTag
       ? `JOIN ${teacher_class_table} AS tc ON t.kk_teacher_idx = tc.kk_teacher_idx`
+      : ""
+  }
+  ${
+    classTag
+      ? `JOIN ${class_table} AS c ON c.kk_class_idx = tc.kk_class_idx`
       : ""
   }
   WHERE t.kk_teacher_approve_status = '1'
@@ -40,6 +48,7 @@ const teacherController = {
   }
   ${partTime ? ` AND t.kk_teacher_time LIKE '%${partTime}%'` : ""}
   ${classIdx ? ` AND tc.kk_class_idx = ${classIdx}` : ""}
+  ${classTag ? ` AND c.kk_class_tag = '${classTag}'` : ""}
   ORDER BY t.kk_teacher_created_at DESC;
 `;
 
