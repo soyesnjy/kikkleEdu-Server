@@ -15,7 +15,7 @@ const teacherController = {
     let parseDayofweek;
     try {
       const query = req.query;
-      const { classIdx, dayofweek, partTime, classTag } = query; // classIdx 필수, dayofweek 선택
+      const { classIdx, dayofweek, partTime, classTag, teacherIdx } = query; // classIdx 필수, dayofweek 선택
 
       //console.log(query);
 
@@ -26,15 +26,33 @@ const teacherController = {
       const class_table = KK_User_Table_Info["class"].table;
 
       const select_query = `
-  SELECT DISTINCT t.kk_teacher_idx, t.kk_teacher_introduction, t.kk_teacher_name
+  SELECT DISTINCT 
+  ${
+    teacherIdx
+      ? `t.kk_teacher_name,
+      t.kk_teacher_profileImg_path,
+      t.kk_teacher_phoneNum,
+      t.kk_teacher_introduction,
+      t.kk_teacher_education,
+      t.kk_teacher_history,
+      t.kk_teacher_location,
+      t.kk_teacher_dayofweek,
+      c.kk_class_title,
+      GROUP_CONCAT(
+        CONCAT(
+            c.kk_class_title
+        ) SEPARATOR ' / '
+    ) AS kk_teacher_class_titles`
+      : `t.kk_teacher_idx, t.kk_teacher_introduction, t.kk_teacher_name`
+  }
   FROM ${teacher_table} AS t
   ${
-    classIdx || classTag
+    classIdx || classTag || teacherIdx
       ? `JOIN ${teacher_class_table} AS tc ON t.kk_teacher_idx = tc.kk_teacher_idx`
       : ""
   }
   ${
-    classTag
+    classTag || teacherIdx
       ? `JOIN ${class_table} AS c ON c.kk_class_idx = tc.kk_class_idx`
       : ""
   }
@@ -49,6 +67,8 @@ const teacherController = {
   ${partTime ? ` AND t.kk_teacher_time LIKE '%${partTime}%'` : ""}
   ${classIdx ? ` AND tc.kk_class_idx = ${classIdx}` : ""}
   ${classTag ? ` AND c.kk_class_tag = '${classTag}'` : ""}
+  ${teacherIdx ? ` AND t.kk_teacher_idx = ${teacherIdx}` : ""}
+  ${teacherIdx ? ` GROUP BY t.kk_teacher_idx` : ""}
   ORDER BY t.kk_teacher_created_at DESC;
 `;
 
