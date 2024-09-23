@@ -25,8 +25,12 @@ const teacherController = {
       const select_query = `
   SELECT t.kk_teacher_idx, t.kk_teacher_introduction, t.kk_teacher_name
   FROM ${teacher_table} AS t
-  JOIN ${teacher_class_table} AS tc ON t.kk_teacher_idx = tc.kk_teacher_idx
-  WHERE tc.kk_class_idx = ${classIdx}
+  ${
+    classIdx
+      ? `JOIN ${teacher_class_table} AS tc ON t.kk_teacher_idx = tc.kk_teacher_idx`
+      : ""
+  }
+  WHERE t.kk_teacher_approve_status = '1'
   ${
     parseDayofweek
       ? `AND (${parseDayofweek
@@ -35,7 +39,7 @@ const teacherController = {
       : ""
   }
   ${partTime ? ` AND t.kk_teacher_time LIKE '%${partTime}%'` : ""}
-  AND t.kk_teacher_approve_status = '1'
+  ${classIdx ? ` AND tc.kk_class_idx = ${classIdx}` : ""}
   ORDER BY t.kk_teacher_created_at DESC;
 `;
 
