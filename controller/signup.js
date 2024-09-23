@@ -393,6 +393,7 @@ const signupController = {
       if (typeof SignUpData === "string") {
         parseSignUpData = JSON.parse(SignUpData);
       } else parseSignUpData = SignUpData;
+      // console.log(parseSignUpData);
 
       const {
         // 강사 회원가입 데이터
@@ -431,21 +432,18 @@ const signupController = {
         if (fileData) uploadFile = await fileDriveSave(fileData);
 
         if (!fileData) delete user_attribute.attr6; // fileData를 업데이트하지 않는 경우 목록에서 삭제
-        delete user_attribute.pKey;
-        delete user_attribute.attr1;
-        delete user_attribute.attr2;
-        delete user_attribute.attr8;
-        delete user_attribute.attr11;
-        delete user_attribute.attr13;
-        delete user_attribute.attr14;
 
-        const update_query = `UPDATE ${user_table} SET ${Object.values(
-          user_attribute
-        )
-          .map((el) => {
-            return `${el} = ?`;
-          })
-          .join(", ")} WHERE kk_teacher_idx = ?`;
+        const update_query = `UPDATE ${user_table} SET
+        kk_teacher_introduction = ?,
+        kk_teacher_name = ?,
+        kk_teacher_phoneNum = ?,
+        ${fileData ? "kk_teacher_profileImg_path = ?," : ""}
+        kk_teacher_location = ?,
+        kk_teacher_history = ?,
+        kk_teacher_education = ?,
+        kk_teacher_approve_status = ?
+        WHERE kk_teacher_idx = ?`;
+
         // console.log(update_query);
 
         const update_value_obj = {
