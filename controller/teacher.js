@@ -67,8 +67,11 @@ const teacherController = {
   ${partTime ? ` AND t.kk_teacher_time LIKE '%${partTime}%'` : ""}
   ${classIdx ? ` AND tc.kk_class_idx = ${classIdx}` : ""}
   ${classTag ? ` AND c.kk_class_tag = '${classTag}'` : ""}
-  ${teacherIdx ? ` AND t.kk_teacher_idx = ${teacherIdx}` : ""}
-  ${teacherIdx ? ` GROUP BY t.kk_teacher_idx` : ""}
+  ${
+    teacherIdx
+      ? ` AND t.kk_teacher_idx = ${teacherIdx} GROUP BY t.kk_teacher_idx`
+      : ""
+  }
   ORDER BY t.kk_teacher_created_at DESC;
 `;
 
