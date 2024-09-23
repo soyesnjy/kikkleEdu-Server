@@ -168,8 +168,6 @@ app.use("/board", BoardRouter);
 // app.use(errController.clientErrorHandler);
 // app.use(errController.univErrorHandler);
 
-// app.listen(PORT, () => console.log(`🚀 HTTP Server is starting on ${PORT}`));
-
 console.log("Kikkle 서버 Start~!");
 // https 보안 파일이 있을 경우
 if (
