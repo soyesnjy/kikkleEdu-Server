@@ -112,7 +112,6 @@ const fileDriveSave = async (fileData) => {
       fileId: file.data.id,
       fields: "id, webViewLink, webContentLink",
     });
-
     return uploadFile;
   } catch (err) {
     console.log(err);
@@ -450,7 +449,9 @@ const signupController = {
           attr3: introduce, // 강사 소개글 (관리자)
           attr4: name,
           attr5: phoneNum,
-          ...(uploadFile && { attr6: uploadFile.data.webViewLink }), // 강사 프로필 사진 (관리자)
+          ...(uploadFile && {
+            attr6: `https://drive.google.com/uc?export=view&id=${uploadFile.data.id}`,
+          }), // 강사 프로필 사진 (관리자)
           attr7: location,
           attr9: history,
           attr10: education,
