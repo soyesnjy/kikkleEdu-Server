@@ -15,7 +15,8 @@ const teacherController = {
     let parseDayofweek;
     try {
       const query = req.query;
-      const { classIdx, dayofweek, partTime, classTag, teacherIdx } = query; // classIdx 필수, dayofweek 선택
+      const { classIdx, dayofweek, partTime, classTag, teacherIdx, main } =
+        query; // classIdx 필수, dayofweek 선택
 
       //console.log(query);
 
@@ -72,7 +73,7 @@ const teacherController = {
       ? ` AND t.kk_teacher_idx = ${teacherIdx} GROUP BY t.kk_teacher_idx`
       : ""
   }
-  ORDER BY t.kk_teacher_created_at DESC;
+  ORDER BY t.kk_teacher_created_at DESC${main ? " LIMIT 5" : ""};
 `;
 
       // console.log(select_query);
