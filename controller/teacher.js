@@ -44,7 +44,7 @@ const teacherController = {
             c.kk_class_title
         ) SEPARATOR ' / '
     ) AS kk_teacher_class_titles`
-      : `t.kk_teacher_idx, t.kk_teacher_introduction, t.kk_teacher_name`
+      : `t.kk_teacher_idx, t.kk_teacher_introduction, t.kk_teacher_name, t.kk_teacher_profileImg_path`
   }
   FROM ${teacher_table} AS t
   ${
