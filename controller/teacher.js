@@ -15,8 +15,15 @@ const teacherController = {
     let parseDayofweek;
     try {
       const query = req.query;
-      const { classIdx, dayofweek, partTime, classTag, teacherIdx, main } =
-        query; // classIdx 필수, dayofweek 선택
+      const {
+        classIdx,
+        dayofweek,
+        partTime,
+        classTag,
+        teacherIdx,
+        main,
+        classType,
+      } = query; // classIdx 필수, dayofweek 선택
 
       //console.log(query);
 
@@ -48,12 +55,12 @@ const teacherController = {
   }
   FROM ${teacher_table} AS t
   ${
-    classIdx || classTag || teacherIdx
+    classIdx || classTag || teacherIdx || classType
       ? `JOIN ${teacher_class_table} AS tc ON t.kk_teacher_idx = tc.kk_teacher_idx`
       : ""
   }
   ${
-    classTag || teacherIdx
+    classTag || teacherIdx || classType
       ? `JOIN ${class_table} AS c ON c.kk_class_idx = tc.kk_class_idx`
       : ""
   }
@@ -68,12 +75,19 @@ const teacherController = {
   ${partTime ? ` AND t.kk_teacher_time LIKE '%${partTime}%'` : ""}
   ${classIdx ? ` AND tc.kk_class_idx = ${classIdx}` : ""}
   ${classTag ? ` AND c.kk_class_tag = '${classTag}'` : ""}
+  ${classType ? ` AND c.kk_class_type LIKE '%${classType}%'` : ""}
   ${
     teacherIdx
       ? ` AND t.kk_teacher_idx = ${teacherIdx} GROUP BY t.kk_teacher_idx`
       : ""
   }
-  ORDER BY t.kk_teacher_created_at DESC${main ? " LIMIT 5" : ""};
+  ${
+    main || classType
+      ? "ORDER BY RAND()"
+      : "ORDER BY t.kk_teacher_created_at DESC"
+  }
+  ${main ? "LIMIT 5" : ""}
+  ${classType ? "LIMIT 4" : ""};
 `;
 
       // console.log(select_query);
