@@ -87,14 +87,18 @@ const classController = {
     // console.log("KK Class Data READ API 호출");
     try {
       const query = req.query;
-      const { classType } = query;
+      const { classType, classTag } = query;
       const class_table = KK_User_Table_Info["class"].table;
-      // const class_attribute = KK_User_Table_Info["class"].attribute;
 
       // SQL 쿼리 준비: 최신순으로 class 데이터 가져오기
       // 2024.08.22: query 조회 기능 추가
-      const select_query = `SELECT kk_class_idx, kk_class_title FROM ${class_table}
+      const select_query = `SELECT 
+      kk_class_idx, 
+      kk_class_title,
+      kk_class_file_path
+      FROM ${class_table}
       ${classType ? `WHERE kk_class_type LIKE '%${classType}%'` : ""}
+      ${classTag ? `WHERE kk_class_tag = '${classTag}'` : ""}
       ORDER BY kk_class_created_at ASC`;
 
       // 데이터베이스 쿼리 실행
@@ -151,7 +155,7 @@ const classController = {
         kk_class_content,
         kk_class_type,
         kk_class_tag,
-        uploadFile.data.webContentLink,
+        `https://lh3.google.com/u/0/d/${uploadFile.data.id}`,
       ];
       // console.log(consult_insert_value);
 
