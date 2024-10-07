@@ -92,6 +92,7 @@ const classController = {
 
       // SQL 쿼리 준비: 최신순으로 class 데이터 가져오기
       // 2024.08.22: query 조회 기능 추가
+      // 2024.10.07: classDetail query 추가
       const select_query = `SELECT 
       kk_class_idx,
       kk_class_title,
