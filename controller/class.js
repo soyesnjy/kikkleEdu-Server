@@ -87,14 +87,16 @@ const classController = {
     // console.log("KK Class Data READ API 호출");
     try {
       const query = req.query;
-      const { classType, classTag } = query;
+      const { classType, classTag, classDetail } = query; // classDetail: 교육 페이지 식별자
       const class_table = KK_User_Table_Info["class"].table;
 
       // SQL 쿼리 준비: 최신순으로 class 데이터 가져오기
       // 2024.08.22: query 조회 기능 추가
       const select_query = `SELECT 
-      kk_class_idx, 
+      kk_class_idx,
       kk_class_title,
+      ${classDetail ? "kk_class_content," : ""}
+      ${classDetail ? "kk_class_detail_path," : ""}
       kk_class_file_path
       FROM ${class_table}
       ${classType ? `WHERE kk_class_type LIKE '%${classType}%'` : ""}
