@@ -98,6 +98,7 @@ const classController = {
       kk_class_title,
       kk_class_tag,
       ${classDetail ? "kk_class_content," : ""}
+      ${classDetail ? "kk_class_info," : ""}
       ${classDetail ? "kk_class_detail_path," : ""}
       kk_class_file_path
       FROM ${class_table}
