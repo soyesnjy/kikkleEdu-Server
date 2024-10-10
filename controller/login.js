@@ -106,8 +106,8 @@ const user_ai_select = async (user_table, user_attribute, parsepUid) => {
   return select_data;
 };
 
-const user_kk_select = async (user_table, user_attribute, parsepUid) => {
-  const select_query = `SELECT * FROM ${user_table} WHERE ${user_attribute.attr1}='${parsepUid}'`;
+const user_kk_select = async (type, parsepUid) => {
+  const select_query = `SELECT * FROM kk_${type} WHERE kk_${type}_uid ='${parsepUid}'`;
   const select_data = await fetchUserData(connection_KK, select_query);
 
   return select_data;
@@ -1227,7 +1227,6 @@ const loginController_KK = {
           .status(400)
           .json({ message: "Non type Value - 404 Bad Request" });
       }
-
       // pUid 없을 경우
       if (!pUid) {
         console.log("Non pUid Value - 404 Bad Request");
@@ -1235,7 +1234,6 @@ const loginController_KK = {
           .status(400)
           .json({ message: "Non pUid Value - 404 Bad Request" });
       }
-
       // passWord 없을 경우
       if (!passWord) {
         console.log("Non passWord Value - 404 Bad Request");
@@ -1251,14 +1249,14 @@ const loginController_KK = {
 
       /* User DB 조회 */
       // User Table && attribut 명시
-      const user_table =
-        type === "teacher"
-          ? KK_User_Table_Info["teacher"].table
-          : KK_User_Table_Info["agency"].table;
-      const user_attribute =
-        type === "teacher"
-          ? KK_User_Table_Info["teacher"].attribute
-          : KK_User_Table_Info["agency"].attribute;
+      // const user_table =
+      //   type === "teacher"
+      //     ? KK_User_Table_Info["teacher"].table
+      //     : KK_User_Table_Info["agency"].table;
+      // const user_attribute =
+      //   type === "teacher"
+      //     ? KK_User_Table_Info["teacher"].attribute
+      //     : KK_User_Table_Info["agency"].attribute;
 
       // 오늘 날짜 변환
       // const dateObj = new Date();
@@ -1269,16 +1267,12 @@ const loginController_KK = {
 
       // 1. SELECT TEST (row가 있는지 없는지 검사)
       // User 계정 DB SELECT Method. uid를 입력값으로 받음
-      const ebt_data = await user_kk_select(
-        user_table,
-        user_attribute,
-        parsepUid
-      );
+      const ebt_data = await user_kk_select(type, parsepUid);
 
       // User 계정이 있는 경우 (row값이 있는 경우 실행)
       if (ebt_data[0]) {
         // Password 불일치
-        if (ebt_data[0][user_attribute.attr2] !== parsePassWord) {
+        if (ebt_data[0][`kk_${type}_pwd`] !== parsePassWord) {
           console.log(
             `Password is incorrect! - 202 Accepted (pUid: ${parsepUid})`
           );
@@ -1294,10 +1288,10 @@ const loginController_KK = {
         }
         // Password 일치: JWT Token 발급 후 세션 저장
 
-        const userIdx = ebt_data[0][user_attribute.pKey];
+        const userIdx = ebt_data[0][`kk_${type}_idx`];
 
         const token = generateToken({
-          id: ebt_data[0][user_attribute.attr1], // uid
+          id: ebt_data[0][`kk_${type}_uid`], // uid
           // email: ebt_data[0].user_attribute.attr1,
         });
 
