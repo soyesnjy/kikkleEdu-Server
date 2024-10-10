@@ -4,7 +4,7 @@ const util = require("util");
 const mysql = require("mysql");
 const { dbconfig_ai, dbconfig_kk } = require("../DB/database");
 // AI DB 연결
-const connection_AI = mysql.createConnection(dbconfig_ai);
+// const connection_AI = mysql.createConnection(dbconfig_ai);
 // connection_AI.connect();
 
 // 키클 DB 연결
@@ -173,6 +173,36 @@ const fileDriveSave = async (fileData) => {
   }
 };
 
+// Google Drive에 파일 저장 함수
+const fileVideoDriveSave = async (file, fileName, mimeType) => {
+  try {
+    const bufferStream = new stream.PassThrough();
+    bufferStream.end(file.buffer);
+
+    const fileMetadata = { name: fileName };
+    const media = { mimeType: mimeType, body: bufferStream };
+
+    // Google Drive에 파일 업로드
+    const createResponse = await drive.files.create({
+      requestBody: fileMetadata,
+      media: media,
+      fields: "id, webViewLink, webContentLink",
+      uploadType: "resumable", // Resumable Upload 사용
+    });
+
+    // Public 권한 설정
+    await drive.permissions.create({
+      fileId: createResponse.data.id,
+      requestBody: { role: "reader", type: "anyone" },
+    });
+
+    return createResponse.data;
+  } catch (error) {
+    console.error("Google Drive 업로드 중 오류 발생:", error);
+    throw new Error("Google Drive 업로드 실패");
+  }
+};
+
 const getSubDirectoriesAndFiles = async (parentId) => {
   const subItems = [];
 
@@ -226,7 +256,7 @@ const directoryController = {
       );
       const tracks = await fetchUserData(
         connection_KK,
-        `SELECT * FROM kk_file WHERE kk_file_form = '${form}'`
+        `SELECT * FROM kk_file WHERE kk_file_form = '${form}' ORDER BY kk_file_name ASC`
       );
       // console.log({ directories, tracks }); // 로그
       return res.status(200).json({ directories, tracks });
@@ -318,6 +348,65 @@ const directoryController = {
           }
         );
       }
+    } catch (error) {
+      console.log(error);
+      res.status(500).send(error.message);
+    }
+  },
+  // Video File CREATE
+  postDirectoryVideoFileDataCreate: async (req, res) => {
+    console.log("KK Video File CREATE API 호출");
+    const file = req.file;
+    const { form, directoryId, fileName } = req.body;
+    try {
+      if (!file) {
+        return res.status(400).json({ message: "업로드된 파일이 없습니다." });
+      }
+
+      // Google Drive에 파일 업로드
+      const uploadedFile = await fileVideoDriveSave(
+        file,
+        file.originalname,
+        file.mimetype
+      );
+
+      // iframe 미리보기용 링크
+      const fileUrl = `https://drive.google.com/file/d/${uploadedFile.id}/preview`;
+
+      // DB 저장
+      connection_KK.query(
+        "INSERT INTO kk_directory (kk_directory_name, kk_directory_parent_idx, kk_directory_type, kk_directory_form) VALUES (?, ?, ?, ?)",
+        [fileName, directoryId, "file", form],
+        (error, results) => {
+          if (error) {
+            console.error(error.sqlMessage);
+            return res
+              .status(400)
+              .json({ message: "kk_directory INSERT Error" });
+          }
+          const fileId = results.insertId;
+
+          connection_KK.query(
+            "INSERT INTO kk_file (kk_directory_idx, kk_file_path, kk_file_name, kk_file_data_id, kk_file_form) VALUES (?, ?, ?, ?, ?)",
+            [fileId, fileUrl, fileName, uploadedFile.id, form],
+            (error) => {
+              if (error) {
+                console.error("Database error:", error);
+                return res
+                  .status(400)
+                  .json({ message: "kk_file INSERT Error" });
+              }
+              return res.status(200).json({
+                id: fileId,
+                name: fileName,
+                parent_id: directoryId,
+                type: "file",
+                url: fileUrl,
+              });
+            }
+          );
+        }
+      );
     } catch (error) {
       console.log(error);
       res.status(500).send(error.message);
