@@ -254,19 +254,6 @@ const directoryController = {
         const { fileData, directoryId, form } = parseData;
 
         const file = await fileDriveSave(fileData);
-
-        // Public URL을 가져오기 위해 파일 정보를 다시 가져옴
-        // const updatedFile = await drive.files.get({
-        //   fileId: file.data.id,
-        //   fields: "id, webViewLink, webContentLink",
-        // });
-
-        // const fileUrl = ` https://lh3.googleusercontent.com/d/${file.data.id}`;
-        // const fileUrl = `https://drive.google.com/uc?export=open&id=${file.data.id}`;
-        // const fileUrl = `https://www.googleapis.com/drive/v3/files/${FILE_ID}?alt=media&key=${API_KEY}`;
-        // const fileUrl = updatedFile.data.webViewLink;
-        // const fileUrl = updatedFile.data.webContentLink;
-
         const fileUrl = `https://drive.google.com/file/d/${file.data.id}/preview`;
 
         connection_KK.query(
