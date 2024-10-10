@@ -499,13 +499,21 @@ const signupController = {
         //   .map((el) => "?")
         //   .join(", ")})`;
 
-        const update_query = `UPDATE ${user_table} SET ${Object.values(
-          user_attribute
-        )
-          .map((el) => {
-            return `${el} = ?`;
-          })
-          .join(", ")} WHERE kk_agency_idx = ?`;
+        // const update_query = `UPDATE ${user_table} SET ${Object.values(
+        //   user_attribute
+        // )
+        //   .map((el) => {
+        //     return `${el} = ?`;
+        //   })
+        //   .join(", ")} WHERE kk_agency_idx = ?`;
+
+        const update_query = `UPDATE ${user_table} SET
+        kk_agency_name = ?,
+        kk_agency_address = ?,
+        kk_agency_phoneNum = ?,
+        kk_agency_type = ?,
+        kk_agency_approve_status = ?
+        WHERE kk_agency_idx = ?`;
         // console.log(update_query);
 
         // INSERT Value 명시
