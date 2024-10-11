@@ -412,6 +412,60 @@ const directoryController = {
       res.status(500).send(error.message);
     }
   },
+  // Video File CREATE V2
+  postDirectoryVideoFileDataCreateV2: async (req, res) => {
+    console.log("KK Video File CREATE V2 API 호출");
+    let parseData;
+    try {
+      const { data } = req.body;
+      // json 파싱
+      if (typeof data === "string") {
+        parseData = JSON.parse(data);
+      } else parseData = data;
+      // console.log(parseData);
+
+      const { fileName, fileCode, directoryId, form } = parseData;
+
+      const fileUrl = `https://drive.google.com/file/d/${fileCode}/preview`;
+
+      connection_KK.query(
+        "INSERT INTO kk_directory (kk_directory_name, kk_directory_parent_idx, kk_directory_type, kk_directory_form) VALUES (?, ?, ?, ?)",
+        [fileName, directoryId, "file", form],
+        (error, results) => {
+          if (error) {
+            console.error(error.sqlMessage);
+            return res
+              .status(400)
+              .json({ message: "kk_directory INSERT Error" });
+          }
+          const fileId = results.insertId;
+
+          connection_KK.query(
+            "INSERT INTO kk_file (kk_directory_idx, kk_file_path, kk_file_name, kk_file_data_id, kk_file_form) VALUES (?, ?, ?, ?, ?)",
+            [fileId, fileUrl, fileName, fileCode, form],
+            (error) => {
+              if (error) {
+                console.error("Database error:", error);
+                return res
+                  .status(400)
+                  .json({ message: "kk_file INSERT Error" });
+              }
+              return res.status(200).json({
+                id: fileId,
+                name: fileName,
+                parent_id: directoryId,
+                type: "file",
+                url: fileUrl,
+              });
+            }
+          );
+        }
+      );
+    } catch (error) {
+      console.log(error);
+      res.status(500).send(error.message);
+    }
+  },
   // TODO# Directory UPDATE
   postDirectoryDataUpdate: (req, res) => {
     console.log("ReviewData UPDATE API 호출");
@@ -485,28 +539,32 @@ const directoryController = {
   // Directory DELETE
   deleteDirectoryDataDelete: async (req, res) => {
     console.log("KK Directory DELETE API 호출");
-    const { directoryIdx, type } = req.query;
+    const { directoryIdx, type, form } = req.query;
     try {
       // Drive Data Delete
       // 파일인 경우
       if (type === "file") {
         const select_data = await query(
-          `SELECT kk_file_data_id 
+          `SELECT kk_file_data_id
            FROM kk_file 
            WHERE kk_directory_idx = ?`,
           [directoryIdx]
         );
-        await drive.files.delete({ fileId: select_data[0].kk_file_data_id });
+        // form 값이 video가 아닌 경우
+        if (form !== "video")
+          await drive.files.delete({ fileId: select_data[0].kk_file_data_id });
         console.log("drive data delete complete");
       }
       // 폴더인 경우
       else if (type === "directory") {
         const itemsToDelete = await getSubDirectoriesAndFiles(directoryIdx);
-
-        for (const item of itemsToDelete) {
-          if (item.kk_directory_type === "file" && item.files) {
-            for (const fileId of item.files) {
-              await drive.files.delete({ fileId: fileId });
+        // form 값이 video가 아닌 경우
+        if (form !== "video") {
+          for (const item of itemsToDelete) {
+            if (item.kk_directory_type === "file" && item.files) {
+              for (const fileId of item.files) {
+                await drive.files.delete({ fileId: fileId });
+              }
             }
           }
         }
