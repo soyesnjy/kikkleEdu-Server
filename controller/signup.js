@@ -119,6 +119,33 @@ const fileDriveSave = async (fileData) => {
   }
 };
 
+// JWT 관련
+const { verify } = require("jsonwebtoken");
+// JWT 검증
+const verifyToken = (type, token) => {
+  let secretKey, decoded;
+  // access, refresh에 따라 비밀키 선택
+  switch (type) {
+    case "access":
+      secretKey = process.env.ACCESS_SECRET;
+      break;
+    case "refresh":
+      secretKey = process.env.REFRESH_SECRET;
+      break;
+    default:
+      return null;
+  }
+
+  try {
+    // 토큰을 비밀키로 복호화
+    decoded = verify(token, secretKey);
+  } catch (err) {
+    console.log(`JWT Error: ${err.message}`);
+    return null;
+  }
+  return decoded;
+};
+
 const signupController = {
   // AI 중복 체크
   dupleCheckAIHandler: (req, res) => {
@@ -555,12 +582,23 @@ const signupController = {
   deleteReviewDataDelete: (req, res) => {
     console.log("KK 회원 DELETE API 호출");
     // console.log(req.query);
+    const refreshToken = req.cookies.refreshToken;
     const { userClass, userIdx } = req.query;
 
     try {
-      const user_table = KK_User_Table_Info[userClass].table;
-      // const user_attribute = KK_User_Table_Info[userClass].attribute;
+      const decoded = verifyToken("refresh", refreshToken);
 
+      // userIdx가 토큰 idx와 다를 경우 (admin은 프리패스)
+      if (decoded.type !== "admin" && Number(userIdx) !== decoded.idx) {
+        console.log(
+          `회원 고유 번호가 토큰의 회원 번호와 일치하지 않습니다. - pUid:${decoded.id}`
+        );
+        return res.status(400).json({
+          message: "회원 고유 번호가 토큰의 회원 번호와 일치하지 않습니다.",
+        });
+      }
+
+      const user_table = KK_User_Table_Info[userClass].table;
       const delete_query = `DELETE FROM ${user_table} WHERE kk_${userClass}_idx = ?`;
 
       connection_KK.query(delete_query, [userIdx], (err) => {
