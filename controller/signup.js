@@ -119,6 +119,34 @@ const fileDriveSave = async (fileData) => {
   }
 };
 
+// 희망 요일 정렬 메서드
+const sortDays = (arr) => {
+  const dayOrder = ["월", "화", "수", "목", "금", "토", "일"];
+
+  // 요일별로 인덱스를 매핑
+  const dayIndex = dayOrder.reduce((acc, day, index) => {
+    acc[day] = index;
+    return acc;
+  }, {});
+
+  // 정렬 수행
+  return arr.sort((a, b) => dayIndex[a] - dayIndex[b]).join("/");
+};
+
+// 희망 시간 정렬 메서드
+const sortTimes = (arr) => {
+  const dayOrder = ["오전", "오후", "야간"];
+
+  // 요일별로 인덱스를 매핑
+  const dayIndex = dayOrder.reduce((acc, day, index) => {
+    acc[day] = index;
+    return acc;
+  }, {});
+
+  // 정렬 수행
+  return arr.sort((a, b) => dayIndex[a] - dayIndex[b]).join("/");
+};
+
 // JWT 관련
 const { verify } = require("jsonwebtoken");
 // JWT 검증
@@ -261,10 +289,10 @@ const signupController = {
             attr5: phoneNumber,
             attr6: "", // 강사 프로필 사진 (관리자)
             attr7: possLocal,
-            attr8: possDay.sort((a, b) => a - b).join("/"),
+            attr8: sortDays(possDay),
             attr9: career,
             attr10: education,
-            attr11: possTime.sort((a, b) => a - b).join("/"), // 강사 희망 시간대
+            attr11: sortTimes(possTime), // 강사 희망 시간대
             attr12: uploadFile.data.webViewLink, // 첨부파일 경로
             attr13: 0,
           };
