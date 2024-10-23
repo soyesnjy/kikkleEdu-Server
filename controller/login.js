@@ -20,6 +20,7 @@ const generateToken = (user) => {
   const payload = {
     idx: user.idx,
     id: user.id,
+    userClass: user.userClass,
     type: user.type,
     // email: user.email,
   };
@@ -1295,7 +1296,8 @@ const loginController_KK = {
         const token = generateToken({
           idx: userIdx, // idx
           id: ebt_data[0][`kk_${type}_uid`], // uid
-          type: ebt_data[0]?.kk_agency_type || "teacher", // 로그인 유형
+          userClass: type, // teacher || agency
+          type: ebt_data[0]?.kk_agency_type || "teacher", // 기관 유형 상세
           // email: ebt_data[0].user_attribute.attr1,
         });
 
@@ -1682,6 +1684,100 @@ const loginController_KK = {
     } catch (err) {
       console.error(err);
       res.status(500).json({ message: "Server Error - 500 Bad Gateway" });
+    }
+  },
+  // (Middle Ware) KK JWT 토큰 유효성 검사
+  vaildateKKTokenCheck: async (req, res, next) => {
+    const refreshToken = req.cookies.refreshToken; // Request Cookie - refreshToken
+    const { userClass, userIdx } = req.query; // Request Query - userClass, userIdx
+
+    // const accessToken = req.session.accessToken;
+    // const sessionId = req.sessionID;
+
+    // User Table && attribut 명시
+    // const user_table = KK_User_Table_Info[userClass].table;
+
+    try {
+      // accessToken이 있는 경우 - accessToken은 세션에 저장된 값이기 때문에 비교적 간단한 검사 진행
+      // if (accessToken) {
+      //   // accessToken Decoding
+      //   const decoded = verifyToken("access", accessToken);
+      //   if (decoded.id) {
+      //     // Redis 중복 로그인 확인
+      //     redisStore.get(`user_session:${decoded.id}`, (err, prevSid) => {
+      //       // Redis 저장된 sid가 있는 경우
+      //       if (prevSid) {
+      //         // 현재 Sid와 Redis Sid가 다른 경우 - 중복 로그인
+      //         if (prevSid !== sessionId) {
+      //           console.log(
+      //             `Duplicated Session 401 Unauthorized - ${decoded.id}`
+      //           );
+      //           return res
+      //             .status(401)
+      //             .json({ message: "Duplicated Session - 401 Unauthorized" });
+      //         }
+      //         // Sid 일치 - 유효성 검증 통과
+      //         console.log(`AccessToken 유효성 검증 통과! - ${decoded.id}`);
+      //         next();
+      //       }
+      //       // Redis에 저장된 Sid가 없는 경우 - 첫 로그인 OR Redis 자동 삭제
+      //       else {
+      //         console.log("Redis Store prevSid 값이 없음");
+      //         // Redis Sid를 현재 Sid로 갱신
+      //         redisStore.set(
+      //           `user_session:${decoded.id}`,
+      //           sessionId,
+      //           (err, reply) => {
+      //             // 로그인 처리 로직
+      //             console.log(`AccessToken SessionID Update - ${sessionId}`);
+      //           }
+      //         );
+      //         next();
+      //       }
+      //     });
+      //   }
+      //   // AccessToken에 id 값이 없는 경우 - 유효한(서버 발급) 토큰이 아닌 경우
+      //   else {
+      //     console.log(`Invaild AccessToken`);
+      //     return res.status(400).json({ message: "Invaild AccessToken - 400" });
+      //   }
+      // }
+      // refreshToken만 있는 경우 - User Table 조회
+      if (refreshToken) {
+        // refreshToken 복호화
+        const decoded = verifyToken("refresh", refreshToken);
+
+        // userIdx가 토큰 idx와 다를 경우 (admin은 프리패스)
+        if (decoded.type !== "admin" && Number(userIdx) !== decoded.idx) {
+          console.log(
+            `회원 고유 번호가 토큰의 회원 번호와 일치하지 않습니다. - pUid:${decoded.id}`
+          );
+          return res.status(400).json({
+            message: "회원 고유 번호가 토큰의 회원 번호와 일치하지 않습니다.",
+          });
+        }
+
+        // userClass가 토큰 userClass와 다를 경우 (admin은 프리패스)
+        if (decoded.type !== "admin" && userClass !== decoded.userClass) {
+          console.log(
+            `회원 유형이 토큰의 회원 유형과 일치하지 않습니다. - pUid:${decoded.id}`
+          );
+          return res.status(400).json({
+            message: "회원 유형이 토큰의 회원 유형과 일치하지 않습니다.",
+          });
+        }
+
+        // All Passed
+        next();
+      }
+      // Token 미발급 상태 - 로그인 권장
+      else {
+        console.log("Login Session Expire! - 401");
+        return res.status(401).json({ message: "Login Session Expire! - 401" });
+      }
+    } catch (err) {
+      console.log(err.message);
+      res.status(500).json({ message: "Server Error - 500" });
     }
   },
 };
