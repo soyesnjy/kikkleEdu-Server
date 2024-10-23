@@ -18,8 +18,10 @@ const { sign, verify } = require("jsonwebtoken");
 // JWT 생성
 const generateToken = (user) => {
   const payload = {
+    idx: user.idx,
     id: user.id,
-    email: user.email,
+    type: user.type,
+    // email: user.email,
   };
   let result = {
     accessToken: sign(payload, process.env.ACCESS_SECRET, {
@@ -1291,15 +1293,17 @@ const loginController_KK = {
         const userIdx = ebt_data[0][`kk_${type}_idx`];
 
         const token = generateToken({
+          idx: userIdx, // idx
           id: ebt_data[0][`kk_${type}_uid`], // uid
+          type: ebt_data[0]?.kk_agency_type || "teacher", // 로그인 유형
           // email: ebt_data[0].user_attribute.attr1,
         });
 
         // Session 내부에 accessToken 저장
-        req.session.accessToken = token.accessToken;
+        // req.session.accessToken = token.accessToken;
         // browser Cookie에 refreshToken 저장
         res.cookie("refreshToken", token.refreshToken, {
-          maxAge: 3600000,
+          maxAge: 60 * 60 * 1000,
           httpOnly: true,
           sameSite: process.env.DEV_OPS === "local" ? "strict" : "none",
           secure: process.env.DEV_OPS !== "local",
