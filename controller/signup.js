@@ -457,20 +457,23 @@ const signupController = {
       if (typeof SignUpData === "string") {
         parseSignUpData = JSON.parse(SignUpData);
       } else parseSignUpData = SignUpData;
-      // console.log(parseSignUpData);
+      console.log(parseSignUpData);
 
       const {
         // 강사 회원가입 데이터
         userIdx, // 회원 idx
-        // pUid, // uid 공통
         userClass, // teacher || agency
+        // pUid, // uid 공통
         // passWord, // pwd 공통
         introduce,
         name, // 이름 공통
         phoneNum, // 전화번호 공통
         location, // 강사 수업 가능 지역
-        // possDay, // 강사 수업 가능 요일
-        // possClass, // 강사 가능 수업
+
+        possDay, // 강사 수업 가능 요일
+        possClass, // 강사 가능 수업
+        possTimes, // 강사 가능 시간대
+
         history, // 강사 경력
         education, // 강사 학력
         fileData, // 첨부파일 공통
@@ -480,7 +483,7 @@ const signupController = {
         typeA, // 기관 타입
       } = parseSignUpData;
 
-      // Input 없을 경우
+      // Required Input 없을 경우
       if (!userClass) {
         return res
           .status(400)
@@ -488,14 +491,14 @@ const signupController = {
       }
 
       const user_table = KK_User_Table_Info[userClass].table;
-      const user_attribute = KK_User_Table_Info[userClass].attribute;
+      // const user_attribute = KK_User_Table_Info[userClass].attribute;
 
       if (userClass === "teacher") {
         // Public URL을 가져오기 위해 파일 정보를 다시 가져옴
         let uploadFile = "";
         if (fileData) uploadFile = await fileDriveSave(fileData);
 
-        if (!fileData) delete user_attribute.attr6; // fileData를 업데이트하지 않는 경우 목록에서 삭제
+        // if (!fileData) delete user_attribute.attr6; // fileData를 업데이트하지 않는 경우 목록에서 삭제
 
         const update_query = `UPDATE ${user_table} SET
         kk_teacher_introduction = ?,
@@ -503,8 +506,10 @@ const signupController = {
         kk_teacher_phoneNum = ?,
         ${fileData ? "kk_teacher_profileImg_path = ?," : ""}
         kk_teacher_location = ?,
+        ${possDay ? "kk_teacher_dayofweek = ?," : ""}
         kk_teacher_history = ?,
         kk_teacher_education = ?,
+        ${possTimes ? "kk_teacher_time = ?," : ""}
         kk_teacher_approve_status = ?
         WHERE kk_teacher_idx = ?`;
 
@@ -518,8 +523,14 @@ const signupController = {
             attr6: `https://drive.google.com/uc?export=view&id=${uploadFile.data.id}`,
           }), // 강사 프로필 사진 (관리자)
           attr7: location,
+          ...(possDay && {
+            attr8: sortDays(possDay),
+          }), // 강사 시간대
           attr9: history,
           attr10: education,
+          ...(possTimes && {
+            attr11: sortDays(possTimes),
+          }), // 강사 요일
           attr12: approveStatus,
           pKey: userIdx,
         };
@@ -535,6 +546,38 @@ const signupController = {
               if (error) {
                 console.log(error);
                 res.status(400).json({ message: error.sqlMessage });
+              }
+              // 수업 변경일 경우 (기존 수업 삭제 -> 갱신된 수업 삽입)
+              else if (possClass) {
+                const table = KK_User_Table_Info["teacher_class"].table;
+                // const teacher_id = rows.insertId; // 삽입한 강사의 pKey
+                // teacher_class Table delete
+                const delete_query = `DELETE FROM kk_teacher_class WHERE kk_teacher_idx = ${userIdx};`;
+                connection_KK.query(delete_query, null, (err) => {
+                  if (error) {
+                    console.log(error);
+                    res.status(400).json({ message: error.sqlMessage });
+                  } else {
+                    // teacher_class Table Insert
+                    const insert_query = `INSERT INTO ${table} (kk_teacher_idx, kk_class_idx) VALUES ${possClass
+                      .map((el) => {
+                        return `(${userIdx}, ${el})`;
+                      })
+                      .join(", ")}`;
+
+                    connection_KK.query(insert_query, null, (err) => {
+                      if (error) {
+                        console.log(error);
+                        res.status(400).json({ message: error.sqlMessage });
+                      } else {
+                        console.log("Teacher Row DB UPDATE Success!");
+                        res.status(200).json({
+                          message: "Teacher SignUp Update Success! - 200 OK",
+                        });
+                      }
+                    });
+                  }
+                });
               } else {
                 console.log("Teacher Row DB UPDATE Success!");
                 res
