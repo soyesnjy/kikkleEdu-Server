@@ -37,7 +37,8 @@ const teacherController = {
   SELECT DISTINCT 
   ${
     teacherIdx
-      ? `t.kk_teacher_name,
+      ? `t.kk_teacher_idx,
+      t.kk_teacher_name,
       t.kk_teacher_profileImg_path,
       t.kk_teacher_phoneNum,
       t.kk_teacher_introduction,
@@ -45,7 +46,12 @@ const teacherController = {
       t.kk_teacher_history,
       t.kk_teacher_location,
       t.kk_teacher_dayofweek,
-      c.kk_class_title,
+      t.kk_teacher_time,
+      GROUP_CONCAT(
+        CONCAT(
+            c.kk_class_idx
+        ) SEPARATOR '/'
+    ) AS kk_teacher_class_idxs,
       GROUP_CONCAT(
         CONCAT(
             c.kk_class_title
