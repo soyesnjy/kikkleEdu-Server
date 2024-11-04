@@ -236,7 +236,14 @@ const signupController = {
       } = parseSignUpData;
 
       // Input 없을 경우
-      if (!pUid || !passWord || !fileData) {
+      if (!pUid || !passWord) {
+        return res
+          .status(400)
+          .json({ message: "Non Sign Up Input Value - 400 Bad Request" });
+      }
+
+      // Input 없을 경우
+      if (userClass === "teacher" && !fileData) {
         return res
           .status(400)
           .json({ message: "Non Sign Up Input Value - 400 Bad Request" });
@@ -267,6 +274,7 @@ const signupController = {
       }
       // 3. INSERT USER (row가 없는 경우). 중복 검사 통과
       else {
+        // 강사 회원가입
         if (userClass === "teacher") {
           // Public URL을 가져오기 위해 파일 정보를 다시 가져옴
           const uploadFile = await fileDriveSave(fileData);
@@ -333,9 +341,11 @@ const signupController = {
               }
             }
           );
-        } else {
+        }
+        // 기관 회원가입
+        else {
           // Public URL을 가져오기 위해 파일 정보를 다시 가져옴
-          const uploadFile = await fileDriveSave(fileData);
+          const uploadFile = fileData ? await fileDriveSave(fileData) : "";
 
           // 2024.08.30: import 에러로 인한 String 처리
           const insert_query = `INSERT INTO kk_agency (kk_agency_uid, kk_agency_pwd, kk_agency_name, kk_agency_address, kk_agency_phoneNum, kk_agency_type, kk_agency_file_path, kk_agency_approve_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
@@ -349,7 +359,7 @@ const signupController = {
             attr4: address,
             attr5: phoneNumber,
             attr6: typeA,
-            attr7: uploadFile.data.webContentLink,
+            attr7: uploadFile ? uploadFile.data.webContentLink : "",
             attr8: 0,
           };
           // console.log(insert_value_obj);
