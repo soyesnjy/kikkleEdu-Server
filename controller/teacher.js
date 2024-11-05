@@ -73,27 +73,36 @@ const teacherController = {
   }
   WHERE t.kk_teacher_approve_status = '1'
   ${
+    // 강사 희망 요일 체크
     parseDayofweek
       ? `AND (${parseDayofweek
           .map((day) => `t.kk_teacher_dayofweek LIKE '%${day}%'`)
           .join(" OR ")})`
       : ""
   }
-  ${partTime ? ` AND t.kk_teacher_time LIKE '%${partTime}%'` : ""}
+  ${
+    // 강사 희망 시간대 체크
+    partTime ? ` AND t.kk_teacher_time LIKE '%${partTime}%'` : ""
+  }
   ${classIdx ? ` AND tc.kk_class_idx = ${classIdx}` : ""}
   ${classTag ? ` AND c.kk_class_tag = '${classTag}'` : ""}
   ${classType ? ` AND c.kk_class_type LIKE '%${classType}%'` : ""}
   ${
+    // 특정 강사 정보 확인
     teacherIdx
       ? ` AND t.kk_teacher_idx = ${teacherIdx} GROUP BY t.kk_teacher_idx`
       : ""
   }
   ${
+    // 메인페이지 OR 기관 페이지 랜덤, 그 외 생성순
     main || classType
       ? "ORDER BY RAND()"
       : "ORDER BY t.kk_teacher_created_at DESC"
   }
-  ${main ? "LIMIT 5" : ""}
+  ${
+    // 메인페이지 5개, 기관 페이지 4개
+    main ? "LIMIT 5" : ""
+  }
   ${classType ? "LIMIT 4" : ""};
 `;
 

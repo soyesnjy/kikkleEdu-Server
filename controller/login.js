@@ -1211,7 +1211,7 @@ const loginController_KK = {
   // 일반 로그인 - 인증
   postKKLoginHandler: async (req, res) => {
     const { data } = req.body;
-    console.log(data);
+    // console.log(data);
     let parseLoginData;
 
     try {
@@ -1305,7 +1305,7 @@ const loginController_KK = {
         // req.session.accessToken = token.accessToken;
         // browser Cookie에 refreshToken 저장
         res.cookie("refreshToken", token.refreshToken, {
-          maxAge: 60 * 60 * 1000,
+          maxAge: 24 * 60 * 60 * 1000,
           httpOnly: true,
           sameSite: process.env.DEV_OPS === "local" ? "strict" : "none",
           secure: process.env.DEV_OPS !== "local",
@@ -1689,13 +1689,10 @@ const loginController_KK = {
   // (Middle Ware) KK JWT 토큰 유효성 검사
   vaildateKKTokenCheck: async (req, res, next) => {
     const refreshToken = req.cookies.refreshToken; // Request Cookie - refreshToken
-    const { userClass, userIdx } = req.query; // Request Query - userClass, userIdx
+    // const { userClass, userIdx } = req.query; // Request Query - userClass, userIdx
 
     // const accessToken = req.session.accessToken;
     // const sessionId = req.sessionID;
-
-    // User Table && attribut 명시
-    // const user_table = KK_User_Table_Info[userClass].table;
 
     try {
       // accessToken이 있는 경우 - accessToken은 세션에 저장된 값이기 때문에 비교적 간단한 검사 진행
@@ -1746,29 +1743,44 @@ const loginController_KK = {
       if (refreshToken) {
         // refreshToken 복호화
         const decoded = verifyToken("refresh", refreshToken);
+        const { id, type } = decoded;
 
-        // userIdx가 토큰 idx와 다를 경우 (admin은 프리패스)
-        if (decoded.type !== "admin" && Number(userIdx) !== decoded.idx) {
-          console.log(
-            `회원 고유 번호가 토큰의 회원 번호와 일치하지 않습니다. - pUid:${decoded.id}`
-          );
+        // 관리자 프리패스
+        if (type === "admin") {
+          return next();
+        }
+
+        const user_data = await user_kk_select(type, id);
+
+        // 회원 승인 여부 체크
+        if (!user_data[`kk_${type}_approve_status`]) {
           return res.status(400).json({
-            message: "회원 고유 번호가 토큰의 회원 번호와 일치하지 않습니다.",
+            message: "미승인 처리된 회원입니다.",
           });
         }
 
-        // userClass가 토큰 userClass와 다를 경우 (admin은 프리패스)
-        if (decoded.type !== "admin" && userClass !== decoded.userClass) {
-          console.log(
-            `회원 유형이 토큰의 회원 유형과 일치하지 않습니다. - pUid:${decoded.id}`
-          );
-          return res.status(400).json({
-            message: "회원 유형이 토큰의 회원 유형과 일치하지 않습니다.",
-          });
-        }
+        // // userIdx가 토큰 idx와 다를 경우 (admin은 프리패스)
+        // if (Number(userIdx) !== decoded.idx) {
+        //   console.log(
+        //     `회원 고유 번호가 토큰의 회원 번호와 일치하지 않습니다. - pUid:${decoded.id}`
+        //   );
+        //   return res.status(400).json({
+        //     message: "회원 고유 번호가 토큰의 회원 번호와 일치하지 않습니다.",
+        //   });
+        // }
+
+        // // userClass가 토큰 userClass와 다를 경우 (admin은 프리패스)
+        // if (userClass !== decoded.userClass) {
+        //   console.log(
+        //     `회원 유형이 토큰의 회원 유형과 일치하지 않습니다. - pUid:${decoded.id}`
+        //   );
+        //   return res.status(400).json({
+        //     message: "회원 유형이 토큰의 회원 유형과 일치하지 않습니다.",
+        //   });
+        // }
 
         // All Passed
-        next();
+        return next();
       }
       // Token 미발급 상태 - 로그인 권장
       else {

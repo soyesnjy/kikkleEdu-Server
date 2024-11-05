@@ -6,6 +6,9 @@ const {
   signupController,
   // signupController_Regercy,
 } = require("../controller/signup");
+
+const { loginController_KK } = require("../controller/login");
+
 const {
   postSignupDataCreate,
   getSignupDataRead,
@@ -13,15 +16,13 @@ const {
   deleteReviewDataDelete,
 } = signupController;
 
-// const { dupleCheckHandler, signupHandler } = signupController_Regercy;
-// router.post("/", signupHandler);
-// router.post("/duplecheck", dupleCheckHandler);
+const { vaildateKKTokenCheck } = loginController_KK;
 
 // KK 회원가입 컨트롤러
-router.get("/read", getSignupDataRead); // Read
-router.post("/create", postSignupDataCreate); // Create
-router.post("/update", postSignupDataUpdate); // Update
-router.delete("/delete", deleteReviewDataDelete); // Delete
+router.get("/read", vaildateKKTokenCheck, getSignupDataRead); // Read
+router.post("/create", vaildateKKTokenCheck, postSignupDataCreate); // Create
+router.post("/update", vaildateKKTokenCheck, postSignupDataUpdate); // Update
+router.delete("/delete", vaildateKKTokenCheck, deleteReviewDataDelete); // Delete
 
 // 에러 메세지 처리
 router.use(errController.errMessageHandler);
