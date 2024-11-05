@@ -594,13 +594,6 @@ const signupController = {
         // let uploadFile = "";
         // if (fileData) uploadFile = await fileDriveSave(fileData);
 
-        delete user_attribute.pKey;
-        delete user_attribute.attr1;
-        delete user_attribute.attr2;
-        delete user_attribute.attr7;
-        delete user_attribute.attr9;
-        delete user_attribute.attr10;
-
         // const update_query = `UPDATE ${user_table} SET (${Object.values(
         //   user_attribute
         // ).join(", ")}) VALUES (${Object.values(user_attribute)
