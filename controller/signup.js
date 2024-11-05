@@ -457,7 +457,7 @@ const signupController = {
       if (typeof SignUpData === "string") {
         parseSignUpData = JSON.parse(SignUpData);
       } else parseSignUpData = SignUpData;
-      console.log(parseSignUpData);
+      // console.log(parseSignUpData);
 
       const {
         // 강사 회원가입 데이터

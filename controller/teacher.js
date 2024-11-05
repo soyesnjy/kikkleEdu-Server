@@ -25,7 +25,7 @@ const teacherController = {
         classType,
       } = query; // classIdx 필수, dayofweek 선택
 
-      //console.log(query);
+      // console.log(query);
 
       parseDayofweek = dayofweek ? dayofweek.split(",") : null; // String -> Array
 
@@ -34,7 +34,8 @@ const teacherController = {
       const class_table = KK_User_Table_Info["class"].table;
 
       const select_query = `
-  SELECT DISTINCT 
+  SELECT
+  ${!teacherIdx ? "DISTINCT" : ""}
   ${
     teacherIdx
       ? `t.kk_teacher_idx,
@@ -62,12 +63,12 @@ const teacherController = {
   FROM ${teacher_table} AS t
   ${
     classIdx || classTag || teacherIdx || classType
-      ? `JOIN ${teacher_class_table} AS tc ON t.kk_teacher_idx = tc.kk_teacher_idx`
+      ? `LEFT JOIN ${teacher_class_table} AS tc ON t.kk_teacher_idx = tc.kk_teacher_idx`
       : ""
   }
   ${
     classTag || teacherIdx || classType
-      ? `JOIN ${class_table} AS c ON c.kk_class_idx = tc.kk_class_idx`
+      ? `LEFT JOIN ${class_table} AS c ON c.kk_class_idx = tc.kk_class_idx`
       : ""
   }
   WHERE t.kk_teacher_approve_status = '1'
