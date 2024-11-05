@@ -529,7 +529,7 @@ const signupController = {
           attr9: history,
           attr10: education,
           ...(possTimes && {
-            attr11: sortDays(possTimes),
+            attr11: sortTimes(possTimes),
           }), // 강사 요일
           attr12: approveStatus,
           pKey: userIdx,
