@@ -285,7 +285,21 @@ const signupController = {
               .json({ message: "SignUp File Drive Upload Fail - 400" });
           }
           // 2024.08.30: import 에러로 인한 String 처리
-          const insert_query = `INSERT INTO kk_teacher (kk_teacher_uid, kk_teacher_pwd, kk_teacher_introduction, kk_teacher_name, kk_teacher_phoneNum, kk_teacher_profileImg_path, kk_teacher_location, kk_teacher_dayofweek, kk_teacher_history, kk_teacher_education, kk_teacher_time, kk_teacher_file_path, kk_teacher_approve_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+          const insert_query = `INSERT INTO kk_teacher (
+          kk_teacher_uid,
+          kk_teacher_pwd,
+          kk_teacher_introduction,
+          kk_teacher_name,
+          kk_teacher_phoneNum,
+          kk_teacher_profileImg_path,
+          kk_teacher_location,
+          kk_teacher_dayofweek,
+          kk_teacher_history,
+          kk_teacher_education,
+          kk_teacher_time,
+          kk_teacher_file_path,
+          kk_teacher_approve_status)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
           // console.log(insert_query);
 
           // INSERT Value 명시
@@ -348,7 +362,16 @@ const signupController = {
           const uploadFile = fileData ? await fileDriveSave(fileData) : "";
 
           // 2024.08.30: import 에러로 인한 String 처리
-          const insert_query = `INSERT INTO kk_agency (kk_agency_uid, kk_agency_pwd, kk_agency_name, kk_agency_address, kk_agency_phoneNum, kk_agency_type, kk_agency_file_path, kk_agency_approve_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+          const insert_query = `INSERT INTO kk_agency
+          (kk_agency_uid,
+          kk_agency_pwd,
+          kk_agency_name,
+          kk_agency_address,
+          kk_agency_phoneNum,
+          kk_agency_type,
+          kk_agency_file_path,
+          kk_agency_approve_status)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
           // console.log(insert_query);
 
           // INSERT Value 명시
