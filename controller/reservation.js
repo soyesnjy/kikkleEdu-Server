@@ -149,7 +149,18 @@ ORDER BY
       // 예약 DB INSERT Reservation
       if (true) {
         // INSERT Reservation
-        const insert_query = `INSERT INTO kk_reservation (kk_agency_idx, kk_class_idx, kk_teacher_idx, kk_reservation_date, kk_reservation_start_date, kk_reservation_end_date, kk_reservation_time, kk_reservation_approve_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+        const insert_query = `INSERT INTO kk_reservation 
+        (
+        kk_agency_idx,
+        kk_class_idx,
+        kk_teacher_idx,
+        kk_reservation_date,
+        kk_reservation_start_date,
+        kk_reservation_end_date,
+        kk_reservation_time,
+        kk_reservation_approve_status
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
         // console.log(insert_query);
 
         // INSERT Value 명시
