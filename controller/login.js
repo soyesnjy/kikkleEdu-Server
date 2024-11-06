@@ -1747,7 +1747,8 @@ const loginController_KK = {
 
         // 관리자 프리패스
         if (type === "admin") {
-          return next();
+          next();
+          return;
         }
 
         const user_data = await user_kk_select(type, id);
@@ -1780,7 +1781,8 @@ const loginController_KK = {
         // }
 
         // All Passed
-        return next();
+        next();
+        return;
       }
       // Token 미발급 상태 - 로그인 권장
       else {
