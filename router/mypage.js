@@ -3,6 +3,7 @@ const express = require("express");
 const router = express.Router();
 const { errController } = require("../controller/index");
 const { mypageController } = require("../controller/mypage");
+const { loginController_KK } = require("../controller/login");
 
 const {
   getKKTeacherAttendDataRead,
@@ -10,10 +11,20 @@ const {
   getKKAgencyReservationDataRead,
 } = mypageController;
 
-router.get("/teacher/read", getKKTeacherAttendDataRead);
-router.post("/teacher/update", postKKTeacherAttendDataUpdate);
+const { vaildateKKTokenCheck } = loginController_KK;
 
-router.get("/agency/read", getKKAgencyReservationDataRead);
+router.get("/teacher/read", vaildateKKTokenCheck, getKKTeacherAttendDataRead);
+router.post(
+  "/teacher/update",
+  vaildateKKTokenCheck,
+  postKKTeacherAttendDataUpdate
+);
+
+router.get(
+  "/agency/read",
+  vaildateKKTokenCheck,
+  getKKAgencyReservationDataRead
+);
 
 // 에러 메세지 처리
 router.use(errController.errMessageHandler);
