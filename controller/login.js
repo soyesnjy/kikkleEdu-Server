@@ -1748,6 +1748,8 @@ const loginController_KK = {
         // refreshToken 복호화
         const decoded = verifyToken("refresh", refreshToken);
         const { id, type } = decoded;
+        // console.log(decoded);
+        let parsedType = type === "teacher" ? "teacher" : "agency";
 
         // 관리자 프리패스
         if (type === "admin") {
@@ -1756,10 +1758,10 @@ const loginController_KK = {
           return;
         }
 
-        const user_data = await user_kk_select(type, id);
+        const user_data = await user_kk_select(parsedType, id);
 
         // 회원 승인 여부 체크
-        if (!user_data[0][`kk_${type}_approve_status`]) {
+        if (!user_data[0][`kk_${parsedType}_approve_status`]) {
           console.log(`미승인 회원 접근 - pUid:${id}`);
           return res.status(400).json({
             message: "미승인 처리된 회원입니다.",
@@ -1804,299 +1806,299 @@ const loginController_KK = {
 
 // jenkins 배포용 주석
 
-const loginController_Regercy = {
-  // 쿠키 유효성 검사
-  vaildateCookies: (req, res, next) => {
-    const { login } = req.cookies;
-    if (login) {
-      if (req.cookies.login === "true") {
-        res.json("Cookie Login Success");
-      }
-    } else next();
-  },
-  // 쿠키 로그인
-  CookieLoginHandler: (req, res) => {
-    const { id, pwd } = req.body;
+// const loginController_Regercy = {
+//   // 쿠키 유효성 검사
+//   vaildateCookies: (req, res, next) => {
+//     const { login } = req.cookies;
+//     if (login) {
+//       if (req.cookies.login === "true") {
+//         res.json("Cookie Login Success");
+//       }
+//     } else next();
+//   },
+//   // 쿠키 로그인
+//   CookieLoginHandler: (req, res) => {
+//     const { id, pwd } = req.body;
 
-    if (users.find((user) => user.id === id && user.pwd === pwd)) {
-      // 로그인 성공 시 쿠키 관련 설정 추가. 도메인은 자동으로 현재 서버와 동일하게 적용.
-      res.cookie("login", "true", {
-        maxAge: 100000, // 쿠키 유효기간
-        path: "/", // 서버 라우팅 시 세부 경로
-        httpOnly: true, // JS의 쿠키 접근 가능 여부 결정
-        secure: true, // sameSite를 none으로 설정하려면 필수
-        sameSite: "none", // none으로 설정해야 cross-site 처리가 가능.
-      });
-      res.json("Login Success");
-    } else {
-      res.json("Login Fail");
-    }
-  },
-  // 쿠키 로그아웃
-  CookieLogoutHandler: (req, res) => {
-    res.clearCookie("login", {
-      httpOnly: true,
-      secure: true,
-      sameSite: "none",
-    });
-    res.json("Cookie LogOut Success");
-  },
-  // 세션 유효성 검사
-  vaildateSession: (req, res, next) => {
-    if (req.session.sessionId) {
-      res.json("Session Login Success");
-    } else next();
-  },
-  // 세션 로그인
-  sessionLoginHandler: (req, res) => {
-    const { id, pwd } = req.body;
-    // console.log(id, pwd);
-    if (users.find((user) => user.id === id && user.pwd === pwd)) {
-      // 로그인 성공 시 세션 아이디 추가
-      req.session.sessionId = id;
-      req.session.cookie.maxAge = 10000;
-      req.session.save(() => {
-        res.json({ data: "Login Success" });
-      });
-    } else {
-      res.json({ data: "Login Fail" });
-    }
-  },
-  // 세션 로그아웃
-  sessionLogoutHandler: (req, res) => {
-    req.session.destroy();
-    res.json("Session LogOut Success");
-  },
-  // JWT 토큰 유효성 검사
-  vaildateToken: (req, res, next) => {
-    const accessToken = req.session.accessToken;
-    const refreshToken = req.cookies.refreshToken;
-    // accessToken이 있는 경우
-    if (accessToken) {
-      const decoded = verifyToken("access", accessToken);
-      if (users.find((user) => user.id === decoded.id)) {
-        res.json({ message: "AccessToken Login Success" });
-      }
-      // refreshToken만 있는 경우
-    } else if (refreshToken) {
-      const decoded = verifyToken("refresh", refreshToken);
-      if (users.find((user) => user.id === decoded.id)) {
-        // accessToken 생성 후 세션에 저장
-        req.session.accessToken = generateToken({
-          id: decoded.id,
-          email: `${decoded.id}@naver.com`,
-        }).accessToken;
-        res.json({ message: "RefreshToken Login Success" });
-      }
-    } else next();
-  },
-  // JWT 토큰 로그인
-  tokenLoginHandler: (req, res) => {
-    const { id, pwd } = req.body;
-    console.log(id, pwd);
-    // MySQL DB 연동
-    connection.query(
-      `SELECT * FROM teacher WHERE (teacher_uid = '${id}' AND teacher_pwd = '${pwd}')`,
-      (error, rows, fields) => {
-        if (error) console.log(error);
-        // rows : 배열 형식으로 저장된 행 데이터
-        // fields: 열(속성) 데이터
+//     if (users.find((user) => user.id === id && user.pwd === pwd)) {
+//       // 로그인 성공 시 쿠키 관련 설정 추가. 도메인은 자동으로 현재 서버와 동일하게 적용.
+//       res.cookie("login", "true", {
+//         maxAge: 100000, // 쿠키 유효기간
+//         path: "/", // 서버 라우팅 시 세부 경로
+//         httpOnly: true, // JS의 쿠키 접근 가능 여부 결정
+//         secure: true, // sameSite를 none으로 설정하려면 필수
+//         sameSite: "none", // none으로 설정해야 cross-site 처리가 가능.
+//       });
+//       res.json("Login Success");
+//     } else {
+//       res.json("Login Fail");
+//     }
+//   },
+//   // 쿠키 로그아웃
+//   CookieLogoutHandler: (req, res) => {
+//     res.clearCookie("login", {
+//       httpOnly: true,
+//       secure: true,
+//       sameSite: "none",
+//     });
+//     res.json("Cookie LogOut Success");
+//   },
+//   // 세션 유효성 검사
+//   vaildateSession: (req, res, next) => {
+//     if (req.session.sessionId) {
+//       res.json("Session Login Success");
+//     } else next();
+//   },
+//   // 세션 로그인
+//   sessionLoginHandler: (req, res) => {
+//     const { id, pwd } = req.body;
+//     // console.log(id, pwd);
+//     if (users.find((user) => user.id === id && user.pwd === pwd)) {
+//       // 로그인 성공 시 세션 아이디 추가
+//       req.session.sessionId = id;
+//       req.session.cookie.maxAge = 10000;
+//       req.session.save(() => {
+//         res.json({ data: "Login Success" });
+//       });
+//     } else {
+//       res.json({ data: "Login Fail" });
+//     }
+//   },
+//   // 세션 로그아웃
+//   sessionLogoutHandler: (req, res) => {
+//     req.session.destroy();
+//     res.json("Session LogOut Success");
+//   },
+//   // JWT 토큰 유효성 검사
+//   vaildateToken: (req, res, next) => {
+//     const accessToken = req.session.accessToken;
+//     const refreshToken = req.cookies.refreshToken;
+//     // accessToken이 있는 경우
+//     if (accessToken) {
+//       const decoded = verifyToken("access", accessToken);
+//       if (users.find((user) => user.id === decoded.id)) {
+//         res.json({ message: "AccessToken Login Success" });
+//       }
+//       // refreshToken만 있는 경우
+//     } else if (refreshToken) {
+//       const decoded = verifyToken("refresh", refreshToken);
+//       if (users.find((user) => user.id === decoded.id)) {
+//         // accessToken 생성 후 세션에 저장
+//         req.session.accessToken = generateToken({
+//           id: decoded.id,
+//           email: `${decoded.id}@naver.com`,
+//         }).accessToken;
+//         res.json({ message: "RefreshToken Login Success" });
+//       }
+//     } else next();
+//   },
+//   // JWT 토큰 로그인
+//   tokenLoginHandler: (req, res) => {
+//     const { id, pwd } = req.body;
+//     console.log(id, pwd);
+//     // MySQL DB 연동
+//     connection.query(
+//       `SELECT * FROM teacher WHERE (teacher_uid = '${id}' AND teacher_pwd = '${pwd}')`,
+//       (error, rows, fields) => {
+//         if (error) console.log(error);
+//         // rows : 배열 형식으로 저장된 행 데이터
+//         // fields: 열(속성) 데이터
 
-        // rows는 테이블의 데이터를 배열 형식 저장
-        // 즉, 배열 메서드를 통해 접근 가능
-        // 아래는 테이블 데이터의 member_name에 접근
-        // console.log(rows.filter((el) => el.member_id === id)[0].member_phone);
+//         // rows는 테이블의 데이터를 배열 형식 저장
+//         // 즉, 배열 메서드를 통해 접근 가능
+//         // 아래는 테이블 데이터의 member_name에 접근
+//         // console.log(rows.filter((el) => el.member_id === id)[0].member_phone);
 
-        if (rows.length) {
-          // 토큰을 활용한 쿠키, 세션
-          // const token = generateToken({ id, email: `${id}@naver.com` });
-          // // accessToken 세션에 추가
-          // req.session.accessToken = token.accessToken;
-          // req.session.refreshToken = token.refreshToken;
+//         if (rows.length) {
+//           // 토큰을 활용한 쿠키, 세션
+//           // const token = generateToken({ id, email: `${id}@naver.com` });
+//           // // accessToken 세션에 추가
+//           // req.session.accessToken = token.accessToken;
+//           // req.session.refreshToken = token.refreshToken;
 
-          res.json({ data: "Login Success" });
-        } else res.json({ data: "Login fail" });
-      }
-    );
+//           res.json({ data: "Login Success" });
+//         } else res.json({ data: "Login fail" });
+//       }
+//     );
 
-    // DB없이 서버 내장 데이터 사용
-    // if (users.find((el) => el.id === id && el.pwd === pwd)) {
-    //   res.json("Login Success");
-    // } else res.json("Login Fail");
-  },
-  // JWT 토큰 로그아웃
-  tokenLogoutHandler: (req, res) => {
-    // // 세션 삭제
-    // req.session.destroy();
+//     // DB없이 서버 내장 데이터 사용
+//     // if (users.find((el) => el.id === id && el.pwd === pwd)) {
+//     //   res.json("Login Success");
+//     // } else res.json("Login Fail");
+//   },
+//   // JWT 토큰 로그아웃
+//   tokenLogoutHandler: (req, res) => {
+//     // // 세션 삭제
+//     // req.session.destroy();
 
-    // // 쿠키 삭제
-    // res.clearCookie("refreshToken", {
-    //   httpOnly: true,
-    //   secure: true,
-    //   sameSite: "none",
-    // });
+//     // // 쿠키 삭제
+//     // res.clearCookie("refreshToken", {
+//     //   httpOnly: true,
+//     //   secure: true,
+//     //   sameSite: "none",
+//     // });
 
-    res.json("Token LogOut Success");
-  },
-  // 유저 정보 전달. 모든 학생 정보 출력
-  getUserHandler: (req, res) => {
-    connection.query(`SELECT * FROM user`, (error, rows, fields) => {
-      if (error) console.log(error);
+//     res.json("Token LogOut Success");
+//   },
+//   // 유저 정보 전달. 모든 학생 정보 출력
+//   getUserHandler: (req, res) => {
+//     connection.query(`SELECT * FROM user`, (error, rows, fields) => {
+//       if (error) console.log(error);
 
-      if (rows.length) {
-        const data = rows.map((row) => {
-          const { user_name, user_number } = row;
-          return { user_name, user_number };
-        });
-        // 오름차순 정렬
-        data.sort((a, b) => {
-          if (a.user_name < b.user_name) return -1;
-          else if (a.user_name > b.user_name) return 1;
-          else return 0;
-        });
+//       if (rows.length) {
+//         const data = rows.map((row) => {
+//           const { user_name, user_number } = row;
+//           return { user_name, user_number };
+//         });
+//         // 오름차순 정렬
+//         data.sort((a, b) => {
+//           if (a.user_name < b.user_name) return -1;
+//           else if (a.user_name > b.user_name) return 1;
+//           else return 0;
+//         });
 
-        res.json({ data });
-      } else res.json("NonUser");
-    });
-  },
-  // 조건부 선생 정보 전달
-  postUsersHandler: (req, res) => {
-    const { vrNum } = req.body;
-    console.log("postTeacher Request => vrNum: " + vrNum);
-    connection.query(
-      `select * from teacher 
-      inner join user on teacher.vr_number = user.user_vr_number 
-      where teacher.vr_number = '${vrNum}'`,
-      (error, rows, fields) => {
-        if (error) console.log(error);
+//         res.json({ data });
+//       } else res.json("NonUser");
+//     });
+//   },
+//   // 조건부 선생 정보 전달
+//   postUsersHandler: (req, res) => {
+//     const { vrNum } = req.body;
+//     console.log("postTeacher Request => vrNum: " + vrNum);
+//     connection.query(
+//       `select * from teacher
+//       inner join user on teacher.vr_number = user.user_vr_number
+//       where teacher.vr_number = '${vrNum}'`,
+//       (error, rows, fields) => {
+//         if (error) console.log(error);
 
-        if (rows.length) {
-          const data = rows.map((row) => {
-            const { user_number, user_name } = row;
-            return { user_number, user_name };
-          });
+//         if (rows.length) {
+//           const data = rows.map((row) => {
+//             const { user_number, user_name } = row;
+//             return { user_number, user_name };
+//           });
 
-          res.json({ data });
-        } else res.json("NonUser");
-      }
-    );
-  },
-  // 조건부 유저 정보 전달
-  postUserHandler: (req, res) => {
-    const { user_number } = req.body;
-    console.log("postUser Request => user_number: " + user_number);
+//           res.json({ data });
+//         } else res.json("NonUser");
+//       }
+//     );
+//   },
+//   // 조건부 유저 정보 전달
+//   postUserHandler: (req, res) => {
+//     const { user_number } = req.body;
+//     console.log("postUser Request => user_number: " + user_number);
 
-    connection.query(
-      `select * from user where user.user_number = '${user_number}'`,
-      (error, rows, fields) => {
-        if (error) console.log(error);
+//     connection.query(
+//       `select * from user where user.user_number = '${user_number}'`,
+//       (error, rows, fields) => {
+//         if (error) console.log(error);
 
-        if (rows.length) {
-          const data = rows.map((row) => {
-            const { user_age } = row;
-            return { user_age };
-          });
+//         if (rows.length) {
+//           const data = rows.map((row) => {
+//             const { user_age } = row;
+//             return { user_age };
+//           });
 
-          res.json({ data });
-        } else res.json("NonUser");
-      }
-    );
-  },
-  // 조건부 선생 정보 전달 (vr_number)
-  postTeacherHandler: (req, res) => {
-    const { teacher_uid } = req.body;
-    console.log("postTeacher Request => teacher_uid: " + teacher_uid);
+//           res.json({ data });
+//         } else res.json("NonUser");
+//       }
+//     );
+//   },
+//   // 조건부 선생 정보 전달 (vr_number)
+//   postTeacherHandler: (req, res) => {
+//     const { teacher_uid } = req.body;
+//     console.log("postTeacher Request => teacher_uid: " + teacher_uid);
 
-    connection.query(
-      `select * from teacher where teacher.teacher_uid = '${teacher_uid}'`,
-      (error, rows, fields) => {
-        if (error) console.log(error);
+//     connection.query(
+//       `select * from teacher where teacher.teacher_uid = '${teacher_uid}'`,
+//       (error, rows, fields) => {
+//         if (error) console.log(error);
 
-        if (rows.length) {
-          const data = rows.map((row) => {
-            const { vr_number } = row;
-            return { vr_number };
-          });
-          res.json({ data });
-        } else res.json("NonUser");
-      }
-    );
-  },
-  // AI 중복 로그인 검사 (Regercy)
-  vaildateDupleLogin: (req, res, next) => {
-    try {
-      const sessionId = req.sessionID;
+//         if (rows.length) {
+//           const data = rows.map((row) => {
+//             const { vr_number } = row;
+//             return { vr_number };
+//           });
+//           res.json({ data });
+//         } else res.json("NonUser");
+//       }
+//     );
+//   },
+//   // AI 중복 로그인 검사 (Regercy)
+//   vaildateDupleLogin: (req, res, next) => {
+//     try {
+//       const sessionId = req.sessionID;
 
-      // Redis에서 기존 세션 ID 확인
-      redisStore.get(`user_session:${userId}`, (err, oldSessionId) => {
-        if (oldSessionId) {
-          // 기존 세션 무효화
-          redisStore.del(`sess:${oldSessionId}`, (err, reply) => {
-            console.log("Previous session invalidated");
-          });
-        }
-      });
+//       // Redis에서 기존 세션 ID 확인
+//       redisStore.get(`user_session:${userId}`, (err, oldSessionId) => {
+//         if (oldSessionId) {
+//           // 기존 세션 무효화
+//           redisStore.del(`sess:${oldSessionId}`, (err, reply) => {
+//             console.log("Previous session invalidated");
+//           });
+//         }
+//       });
 
-      next();
-    } catch (err) {
-      console.error(err.message);
-      res.status(500).json({ message: "Server Error - 500 Bad Gateway" });
-    }
-  },
-  // AI JWT 토큰 유효성 검사 - 로그인 (Regercy)
-  vaildateTokenAI: async (req, res, next) => {
-    console.log("AI JWT 토큰 유효성 검사 API 호출 /login/ai");
-    const { LoginData } = req.body;
-    // Session data 조회
-    const accessToken = req.session.accessToken;
-    const refreshToken = req.cookies.refreshToken;
+//       next();
+//     } catch (err) {
+//       console.error(err.message);
+//       res.status(500).json({ message: "Server Error - 500 Bad Gateway" });
+//     }
+//   },
+//   // AI JWT 토큰 유효성 검사 - 로그인 (Regercy)
+//   vaildateTokenAI: async (req, res, next) => {
+//     console.log("AI JWT 토큰 유효성 검사 API 호출 /login/ai");
+//     const { LoginData } = req.body;
+//     // Session data 조회
+//     const accessToken = req.session.accessToken;
+//     const refreshToken = req.cookies.refreshToken;
 
-    let parseLoginData;
-    try {
-      // 입력값 파싱
-      if (typeof LoginData === "string") {
-        parseLoginData = JSON.parse(LoginData);
-      } else parseLoginData = LoginData;
+//     let parseLoginData;
+//     try {
+//       // 입력값 파싱
+//       if (typeof LoginData === "string") {
+//         parseLoginData = JSON.parse(LoginData);
+//       } else parseLoginData = LoginData;
 
-      const { pUid } = parseLoginData;
+//       const { pUid } = parseLoginData;
 
-      let parsepUid = pUid;
+//       let parsepUid = pUid;
 
-      // accessToken이 있는 경우
-      if (accessToken) {
-        // accessToken Decoding
-        const decoded = verifyToken("access", accessToken);
-        // DB 계정과 입력 id가 같을 경우 인가
-        if (decoded.id === parsepUid) {
-          console.log("accessToken Login Success!");
-          return res.status(200).json({ message: "AccessToken Login Success" });
-        }
-        // refreshToken만 있는 경우
-      } else if (refreshToken) {
-        // refreshToken Decoding
-        const decoded = verifyToken("refresh", refreshToken);
-        if (decoded.id === parsepUid) {
-          console.log("refreshToken Login Success!");
-          // accessToken 재발행 후 세션에 저장
-          req.session.accessToken = generateToken({
-            id: decoded.id,
-            email: decoded.email,
-          }).accessToken;
-          return res
-            .status(200)
-            .json({ message: "RefreshToken Login Success" });
-        }
-      }
-      next();
-    } catch (err) {
-      console.log(err);
-      res.status(500).json({ message: "Server Error - 500" });
-    }
-  },
-};
+//       // accessToken이 있는 경우
+//       if (accessToken) {
+//         // accessToken Decoding
+//         const decoded = verifyToken("access", accessToken);
+//         // DB 계정과 입력 id가 같을 경우 인가
+//         if (decoded.id === parsepUid) {
+//           console.log("accessToken Login Success!");
+//           return res.status(200).json({ message: "AccessToken Login Success" });
+//         }
+//         // refreshToken만 있는 경우
+//       } else if (refreshToken) {
+//         // refreshToken Decoding
+//         const decoded = verifyToken("refresh", refreshToken);
+//         if (decoded.id === parsepUid) {
+//           console.log("refreshToken Login Success!");
+//           // accessToken 재발행 후 세션에 저장
+//           req.session.accessToken = generateToken({
+//             id: decoded.id,
+//             email: decoded.email,
+//           }).accessToken;
+//           return res
+//             .status(200)
+//             .json({ message: "RefreshToken Login Success" });
+//         }
+//       }
+//       next();
+//     } catch (err) {
+//       console.log(err);
+//       res.status(500).json({ message: "Server Error - 500" });
+//     }
+//   },
+// };
 
 module.exports = {
   loginController,
   loginController_KK,
-  loginController_Regercy,
+  // loginController_Regercy,
 };
