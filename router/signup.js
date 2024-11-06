@@ -19,22 +19,10 @@ const {
 const { vaildateKKTokenCheck } = loginController_KK;
 
 // KK 회원가입 컨트롤러
-router.get(
-  "/read",
-  // vaildateKKTokenCheck,
-  getSignupDataRead
-); // Read
-router.post(
-  "/create",
-  // vaildateKKTokenCheck,
-  postSignupDataCreate
-); // Create
+router.get("/read", vaildateKKTokenCheck, getSignupDataRead); // Read
+router.post("/create", vaildateKKTokenCheck, postSignupDataCreate); // Create
 router.post("/update", vaildateKKTokenCheck, postSignupDataUpdate); // Update
-router.delete(
-  "/delete",
-  // vaildateKKTokenCheck,
-  deleteReviewDataDelete
-); // Delete
+router.delete("/delete", vaildateKKTokenCheck, deleteReviewDataDelete); // Delete
 
 // 에러 메세지 처리
 router.use(errController.errMessageHandler);

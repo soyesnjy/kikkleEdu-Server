@@ -1688,9 +1688,13 @@ const loginController_KK = {
   },
   // (Middle Ware) KK JWT 토큰 유효성 검사
   vaildateKKTokenCheck: async (req, res, next) => {
-    const refreshToken = req.cookies.refreshToken; // Request Cookie - refreshToken
+    // const refreshToken = req.cookies.refreshToken; // Request Cookie - refreshToken
     // const { userClass, userIdx } = req.query; // Request Query - userClass, userIdx
-    console.log(`refreshToken: ${refreshToken}`);
+
+    // authorization 헤더 체크
+    const authHeader = req.headers["authorization"];
+    const refreshToken = authHeader && authHeader.split(" ")[1];
+
     // const accessToken = req.session.accessToken;
     // const sessionId = req.sessionID;
 
@@ -1747,6 +1751,7 @@ const loginController_KK = {
 
         // 관리자 프리패스
         if (type === "admin") {
+          console.log("Admin Access");
           next();
           return;
         }
@@ -1755,6 +1760,7 @@ const loginController_KK = {
 
         // 회원 승인 여부 체크
         if (!user_data[0][`kk_${type}_approve_status`]) {
+          console.log(`미승인 회원 접근 - pUid:${id}`);
           return res.status(400).json({
             message: "미승인 처리된 회원입니다.",
           });
