@@ -1312,23 +1312,23 @@ const loginController_KK = {
         });
 
         // Redis에서 기존 세션 ID 확인
-        redisStore.get(`user_session:${parsepUid}`, (err, oldSessionId) => {
-          if (oldSessionId) {
-            // 기존 세션 무효화
-            redisStore.destroy(`user_session:${parsepUid}`, (err, reply) => {
-              console.log("Previous session invalidated");
-            });
-          }
-          // 새 세션 ID를 사용자 ID와 연결
-          redisStore.set(
-            `user_session:${parsepUid}`,
-            sessionId,
-            (err, reply) => {
-              // 로그인 처리 로직
-              console.log(`[${parsepUid}] SessionID Update - ${sessionId}`);
-            }
-          );
-        });
+        // redisStore.get(`user_session:${parsepUid}`, (err, oldSessionId) => {
+        //   if (oldSessionId) {
+        //     // 기존 세션 무효화
+        //     redisStore.destroy(`user_session:${parsepUid}`, (err, reply) => {
+        //       console.log("Previous session invalidated");
+        //     });
+        //   }
+        //   // 새 세션 ID를 사용자 ID와 연결
+        //   redisStore.set(
+        //     `user_session:${parsepUid}`,
+        //     sessionId,
+        //     (err, reply) => {
+        //       // 로그인 처리 로직
+        //       console.log(`[${parsepUid}] SessionID Update - ${sessionId}`);
+        //     }
+        //   );
+        // });
 
         console.log(`User Login Success! - 200 OK (pUid: ${parsepUid})`);
         // client 전송
@@ -1690,7 +1690,7 @@ const loginController_KK = {
   vaildateKKTokenCheck: async (req, res, next) => {
     const refreshToken = req.cookies.refreshToken; // Request Cookie - refreshToken
     // const { userClass, userIdx } = req.query; // Request Query - userClass, userIdx
-
+    console.log(`refreshToken: ${refreshToken}`);
     // const accessToken = req.session.accessToken;
     // const sessionId = req.sessionID;
 

@@ -29,11 +29,7 @@ router.post(
   // vaildateKKTokenCheck,
   postSignupDataCreate
 ); // Create
-router.post(
-  "/update",
-  // vaildateKKTokenCheck,
-  postSignupDataUpdate
-); // Update
+router.post("/update", vaildateKKTokenCheck, postSignupDataUpdate); // Update
 router.delete(
   "/delete",
   // vaildateKKTokenCheck,
