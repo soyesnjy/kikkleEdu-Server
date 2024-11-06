@@ -1743,7 +1743,6 @@ const loginController_KK = {
       if (refreshToken) {
         // refreshToken 복호화
         const decoded = verifyToken("refresh", refreshToken);
-        console.log(decoded);
         const { id, type } = decoded;
 
         // 관리자 프리패스
@@ -1753,10 +1752,9 @@ const loginController_KK = {
         }
 
         const user_data = await user_kk_select(type, id);
-        console.log(user_data);
 
         // 회원 승인 여부 체크
-        if (!user_data[`kk_${type}_approve_status`]) {
+        if (!user_data[0][`kk_${type}_approve_status`]) {
           return res.status(400).json({
             message: "미승인 처리된 회원입니다.",
           });
