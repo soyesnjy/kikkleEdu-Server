@@ -114,8 +114,8 @@ app.use(
 
 app.get("/kikle", (req, res) => {
   // jenkins 배포 테스트용 주석5
-  console.log("Hello Kikkle!");
-  res.status(200).json({ text: "Hello Kikkle!" });
+  console.log("Hello Kikle!");
+  res.status(200).json({ text: "Hello Kikle!" });
 });
 
 // path 경로 라우팅
@@ -123,16 +123,16 @@ app.get("/kikle", (req, res) => {
 // app.use("/path", pathRouter);
 // error 경로 라우팅
 const errorRouter = require("./router/error");
-app.use("/error", errorRouter);
+app.use("/kikle/error", errorRouter);
 // login 경로 라우팅
 const loginRouter = require("./router/login");
-app.use("/login", loginRouter);
+app.use("/kikle/login", loginRouter);
 // signup 경로 라우팅
 const signupRouter = require("./router/signup");
-app.use("/signup", signupRouter);
+app.use("/kikle/signup", signupRouter);
 // directory 경로 라우팅
 const directoryRouter = require("./router/directory");
-app.use("/directory", directoryRouter);
+app.use("/kikle/directory", directoryRouter);
 
 // AI
 // openAI 경로 라우팅
@@ -148,18 +148,18 @@ app.use("/directory", directoryRouter);
 // Kikle Edu
 // 수업 관련 Router
 const ClassRouter = require("./router/class");
-app.use("/class", ClassRouter);
+app.use("/kikle/class", ClassRouter);
 // 강사 관련 Router
 const TeacherRouter = require("./router/teacher");
-app.use("/teacher", TeacherRouter);
+app.use("/kikle/teacher", TeacherRouter);
 // 예약 관련 Router
 const ReservationRouter = require("./router/reservation");
-app.use("/reservation", ReservationRouter);
+app.use("/kikle/reservation", ReservationRouter);
 // 마이페이지 관련 Router
 const MypageRouter = require("./router/mypage");
-app.use("/mypage", MypageRouter);
+app.use("/kikle/mypage", MypageRouter);
 const BoardRouter = require("./router/board");
-app.use("/board", BoardRouter);
+app.use("/kikle/board", BoardRouter);
 
 // MailTest 경로 라우팅
 // const mailTestRouter = require("./router/mailTest");
