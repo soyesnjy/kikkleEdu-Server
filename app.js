@@ -138,8 +138,8 @@ app.use("/directory", directoryRouter);
 // const openAIRouter = require("./router/openAI");
 // app.use("/openAI", openAIRouter);
 
-const reviewRouter = require("./router/review");
-app.use("/review", reviewRouter);
+// const reviewRouter = require("./router/Legacy/SoyesAI/review");
+// app.use("/review", reviewRouter);
 
 // const kakaoPayRouter = require("./router/kakaoPay");
 // app.use("/kakaopay", kakaoPayRouter);

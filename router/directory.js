@@ -2,7 +2,7 @@
 const express = require("express");
 const router = express.Router();
 
-const { errController } = require("../controller/index");
+const { errController } = require("../controller/Legacy/Tips/index");
 const { directoryController } = require("../controller/directory");
 
 const {

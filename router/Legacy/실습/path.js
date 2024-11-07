@@ -2,7 +2,7 @@
 const express = require("express");
 const router = express.Router();
 
-const { pathController } = require("../controller/index");
+const { pathController } = require("../../../controller/Legacy/Tips/index");
 
 router.get("/", pathController.default);
 router.get("/first", pathController.first);

@@ -1,4 +1,8 @@
-const { ebt_Result, ebt_Consulting, ebt_Solution } = require("../DB/psy_test");
+const {
+  ebt_Result,
+  ebt_Consulting,
+  ebt_Solution,
+} = require("./Legacy/Prompt/psy_test");
 
 // SoyesAI Database Table Info
 const User_Table_Info = {

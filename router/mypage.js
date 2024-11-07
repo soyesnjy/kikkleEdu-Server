@@ -1,7 +1,7 @@
 // router이므로 express.Router() 인스턴스 생성
 const express = require("express");
 const router = express.Router();
-const { errController } = require("../controller/index");
+const { errController } = require("../controller/Legacy/Tips/index");
 const { mypageController } = require("../controller/mypage");
 const { loginController_KK } = require("../controller/login");
 

@@ -12,7 +12,7 @@ const io = socketIO(server, {
 
 // DB 호출
 const mysql = require("mysql");
-const { dbconfig } = require("../DB/database");
+const { dbconfig } = require("../../../DB/database");
 const connection = mysql.createConnection(dbconfig);
 connection.connect();
 

@@ -1,19 +1,19 @@
 require("dotenv").config();
 
-const users = [
-  {
-    id: "njy95",
-    pwd: "qwer1234",
-  },
-  {
-    id: "njy96",
-    pwd: "qwer1234",
-  },
-  {
-    id: "njy97",
-    pwd: "qwer1234",
-  },
-];
+// const users = [
+//   {
+//     id: "njy95",
+//     pwd: "qwer1234",
+//   },
+//   {
+//     id: "njy96",
+//     pwd: "qwer1234",
+//   },
+//   {
+//     id: "njy97",
+//     pwd: "qwer1234",
+//   },
+// ];
 
 const dbconfig = {
   host: process.env.DATABASE_HOST,
@@ -37,7 +37,7 @@ const dbconfig_kk = {
 };
 
 module.exports = {
-  users,
+  // users,
   dbconfig,
   dbconfig_ai,
   dbconfig_kk,

@@ -1,14 +1,14 @@
 // router이므로 express.Router() 인스턴스 생성
 const express = require("express");
 const router = express.Router();
-const { errController } = require("../controller/index");
+const { errController } = require("../../../controller/Legacy/Tips/index");
 // const { openAIController } = require("../controller/index");
 const {
   openAIController,
   openAIController_Regercy, // 레거시 코드
-} = require("../controller/openAI");
+} = require("../../../controller/openAI");
 
-const { loginController } = require("../controller/login");
+const { loginController } = require("../../../controller/login");
 
 const {
   postOpenAIEmotionAnalyze,
