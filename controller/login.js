@@ -1688,12 +1688,12 @@ const loginController_KK = {
   },
   // (Middle Ware) KK JWT 토큰 유효성 검사
   vaildateKKTokenCheck: async (req, res, next) => {
-    // const refreshToken = req.cookies.refreshToken; // Request Cookie - refreshToken
     // const { userClass, userIdx } = req.query; // Request Query - userClass, userIdx
+    // const refreshToken = req.cookies.refreshToken; // Request Cookie - refreshToken => 스토어 배포 어플에 Cookie 적용이 안됨
 
     // authorization 헤더 체크
     const authHeader = req.headers["authorization"];
-    const refreshToken = authHeader && authHeader.split(" ")[1];
+    const refreshToken = authHeader && authHeader.split(" ")[1]; // split 하는 이유: 'Barer [TokenValue]' 형식으로 전달받기 때문
 
     // const accessToken = req.session.accessToken;
     // const sessionId = req.sessionID;
