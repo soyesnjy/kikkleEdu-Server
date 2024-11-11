@@ -1693,7 +1693,7 @@ const loginController_KK = {
 
     // authorization 헤더 체크
     const authHeader = req.headers["authorization"];
-    const refreshToken = authHeader && authHeader.split(" ")[1]; // split 하는 이유: 'Barer [TokenValue]' 형식으로 전달받기 때문
+    const refreshToken = authHeader && authHeader?.split(" ")[1]; // split 하는 이유: 'Barer [TokenValue]' 형식으로 전달받기 때문
 
     // const accessToken = req.session.accessToken;
     // const sessionId = req.sessionID;
@@ -1744,7 +1744,7 @@ const loginController_KK = {
       //   }
       // }
       // refreshToken만 있는 경우 - User Table 조회
-      if (refreshToken) {
+      if (refreshToken.includes("eyJhb")) {
         // refreshToken 복호화
         const decoded = verifyToken("refresh", refreshToken);
         const { id, type } = decoded;
@@ -1763,7 +1763,7 @@ const loginController_KK = {
         // 회원 승인 여부 체크
         if (!user_data[0][`kk_${parsedType}_approve_status`]) {
           console.log(`미승인 회원 접근 - pUid:${id}`);
-          return res.status(400).json({
+          return res.status(401).json({
             message: "미승인 처리된 회원입니다.",
           });
         }
@@ -1795,7 +1795,9 @@ const loginController_KK = {
       // Token 미발급 상태 - 로그인 권장
       else {
         console.log("Login Session Expire! - 401");
-        return res.status(401).json({ message: "Login Session Expire! - 401" });
+        return res
+          .status(401)
+          .json({ message: "로그인 세션이 만료되었습니다! - 401" });
       }
     } catch (err) {
       console.log(err.message);
