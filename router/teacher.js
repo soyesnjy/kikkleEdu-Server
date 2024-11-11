@@ -3,10 +3,12 @@ const express = require("express");
 const router = express.Router();
 const { errController } = require("../controller/Legacy/Tips/index");
 const { teacherController } = require("../controller/teacher");
+const { loginController_KK } = require("../controller/login");
 
 const { getKKTeacherDataRead } = teacherController;
+const { vaildateKKTokenCheck } = loginController_KK;
 
-router.get("/", getKKTeacherDataRead);
+router.get("/", vaildateKKTokenCheck, getKKTeacherDataRead);
 
 // 에러 메세지 처리
 router.use(errController.errMessageHandler);
