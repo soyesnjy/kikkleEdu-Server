@@ -45,8 +45,8 @@ const ReservationController = {
 
       // Pagination Last Number Select
       const count_query = `SELECT COUNT(*) FROM kk_reservation`;
-      const count_data = await fetchUserData(connection_KK, count_query);
-      const lastPageNum = Math.ceil(count_data[0]["COUNT(*)"] / limit);
+      // const count_data = await fetchUserData(connection_KK, count_query);
+      // const lastPageNum = Math.ceil(count_data[0]["COUNT(*)"] / limit);
       // console.log(lastPageNum);
 
       const select_query = `SELECT 
@@ -64,7 +64,7 @@ const ReservationController = {
             'kk_teacher_idx:',t.kk_teacher_idx,', ',
             'kk_teacher_name:',t.kk_teacher_name
         ) SEPARATOR ' | '
-    ) AS teacher_info
+    ) AS teacher_info , (${count_query}) AS total_count
 FROM 
     kk_reservation AS r
 JOIN 
@@ -91,7 +91,9 @@ ORDER BY
             message: err.sqlMessage,
           });
         }
-        // console.log(data);
+        const total_count = data.length > 0 ? data[0].total_count : 0;
+        const lastPageNum = Math.ceil(total_count / limit);
+        // console.log(total_count);
         // 결과 반환
         return res.status(200).json({
           message: "Teacher Access Success! - 200 OK",

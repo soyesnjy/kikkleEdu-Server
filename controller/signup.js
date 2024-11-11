@@ -175,33 +175,6 @@ const verifyToken = (type, token) => {
 };
 
 const signupController = {
-  // AI 중복 체크
-  dupleCheckAIHandler: (req, res) => {
-    const { id, vrNum, type } = req.body;
-
-    // MySQL DB 연동
-    if (type === "id") {
-      connection.query(
-        `SELECT * FROM teacher WHERE (teacher_uid = '${id}')`,
-        (error, rows, fields) => {
-          if (error) console.log(error);
-          if (rows.length) {
-            res.json({ data: "Fail" });
-          } else res.json({ data: "Success" });
-        }
-      );
-    } else {
-      connection.query(
-        `SELECT * FROM teacher WHERE (vr_number = '${vrNum}')`,
-        (error, rows, fields) => {
-          if (error) console.log(error);
-          if (rows.length) {
-            res.json({ data: "Fail" });
-          } else res.json({ data: "Success" });
-        }
-      );
-    }
-  },
   // KK 회원가입 Create
   postSignupDataCreate: async (req, res) => {
     const { SignUpData } = req.body;
@@ -256,8 +229,6 @@ const signupController = {
       //     .json({ message: "Non Korean Input Value - 400 Bad Request" });
       // }
       console.log(`User Create API 호출 - ${userClass}`);
-      // const user_table = KK_User_Table_Info[userClass].table;
-      // const user_attribute = KK_User_Table_Info[userClass].attribute;
 
       // 1. SELECT TEST (row가 있는지 없는지 검사)
       const select_query = `SELECT * FROM ${
@@ -268,6 +239,7 @@ const signupController = {
       // 2. DUPLICATE USER (row 중복검사)
       if (user_data[0]) {
         // 같은 uid의 User가 이미 존재하는 경우
+        console.log(`${userClass} Table has Duplicated User - pUid:${pUid}`);
         return res
           .status(403)
           .json({ message: "Duplicate User - 403 Forbidden" });
@@ -279,7 +251,7 @@ const signupController = {
           // Public URL을 가져오기 위해 파일 정보를 다시 가져옴
           const uploadFile = await fileDriveSave(fileData);
           if (!uploadFile) {
-            console.log("SignUp File Drive Upload Fail - 400");
+            console.log(`SignUp File Drive Upload Fail - pUid:${pUid}`);
             return res
               .status(400)
               .json({ message: "SignUp File Drive Upload Fail - 400" });
@@ -326,6 +298,7 @@ const signupController = {
             Object.values(insert_value_obj),
             (error, rows, fields) => {
               if (error) {
+                console.log(`Teacher Table Insert Error - pUid:${pUid}`);
                 console.log(error);
                 res.status(400).json({ message: error.sqlMessage });
               } else {
@@ -343,10 +316,15 @@ const signupController = {
 
                 connection_KK.query(insert_query, null, (err) => {
                   if (error) {
+                    console.log(
+                      `Teacher_Class Table Insert Error - pUid:${pUid}`
+                    );
                     console.log(error);
                     res.status(400).json({ message: error.sqlMessage });
                   } else {
-                    console.log("Teacher Row DB INSERT Success!");
+                    console.log(
+                      `Teacher Row DB INSERT Success! - pUid:${pUid}`
+                    );
                     res
                       .status(200)
                       .json({ message: "Teacher SignUp Success! - 200 OK" });
@@ -393,10 +371,11 @@ const signupController = {
             Object.values(insert_value_obj),
             (error, rows, fields) => {
               if (error) {
+                console.log(`Agency Table Insert Error - pUid:${pUid}`);
                 console.log(error);
                 res.status(400).json({ message: error.sqlMessage });
               } else {
-                console.log("Agency Row DB INSERT Success!");
+                console.log(`Agency Row DB INSERT Success! - pUid:${pUid}`);
                 res
                   .status(200)
                   .json({ message: "Agency SignUp Success! - 200 OK" });
@@ -421,49 +400,51 @@ const signupController = {
       const limit = 10; // 한 페이지에 보여줄 리뷰의 수
       const offset = (page - 1) * limit;
 
-      if (true) {
-        const user_table = KK_User_Table_Info[userClass].table;
-        // const user_attribute = KK_User_Table_Info[userClass].attribute;
+      const user_table = KK_User_Table_Info[userClass].table;
+      // const user_attribute = KK_User_Table_Info[userClass].attribute;
 
-        // Pagination Last Number Select
-        const count_query = `SELECT COUNT(*) FROM ${user_table} ${
-          userClass === "agency" ? `WHERE kk_agency_type != 'admin' ` : ""
-        }`;
-        const count_data = await fetchUserData(connection_KK, count_query);
-        const lastPageNum = Math.ceil(count_data[0]["COUNT(*)"] / limit);
-        // console.log(lastPageNum);
+      // Pagination Last Number Select
+      const count_query = `SELECT COUNT(*) FROM ${user_table} ${
+        userClass === "agency" ? `WHERE kk_agency_type != 'admin' ` : ""
+      }`;
 
-        // SQL 쿼리 준비: 최신순으로 유저 데이터 가져오기
-        // const select_query = `SELECT * FROM ${user_table} WHERE kk_${userClass}_approve_status = '0' ORDER BY kk_${userClass}_created_at DESC LIMIT ? OFFSET ?`;
-        const select_query = `SELECT * FROM ${user_table} ${
-          userClass === "agency" ? `WHERE kk_agency_type != 'admin' ` : ""
-        }${
-          name ? `WHERE kk_${userClass}_name LIKE '%${name}%' ` : ""
-        }ORDER BY kk_${userClass}_created_at DESC LIMIT ? OFFSET ?`;
+      // const count_data = await fetchUserData(connection_KK, count_query);
+      // const lastPageNum = Math.ceil(count_data[0]["COUNT(*)"] / limit);
+      // console.log(lastPageNum);
 
-        const select_values = [limit, offset];
-        // 데이터베이스 쿼리 실행
-        connection_KK.query(select_query, select_values, (err, data) => {
-          if (err) {
-            console.log(err);
-            return res.status(400).json({
-              message: "User SignUp Request READ Fail! - 400",
-              page: -1,
-              limit: -1,
-              lastPageNum: -1,
-              data: [],
-            });
-          }
-          // 결과 반환
-          return res.status(200).json({
-            message: "User SignUp Request READ Success! - 200",
-            page,
-            limit,
-            lastPageNum,
-            data: data,
+      // SQL 쿼리 준비: 최신순으로 유저 데이터 가져오기 + total_count (Table Row Count 반환) SubQuery 추가
+      const select_query = `SELECT *,
+         (${count_query}) AS total_count
+      FROM ${user_table}
+      ${userClass === "agency" ? `WHERE kk_agency_type != 'admin' ` : ""}
+      ${name ? `WHERE kk_${userClass}_name LIKE '%${name}%' ` : ""}
+      ORDER BY kk_${userClass}_created_at DESC LIMIT ? OFFSET ?`;
+
+      const select_values = [limit, offset];
+      // 데이터베이스 쿼리 실행
+      connection_KK.query(select_query, select_values, (err, data) => {
+        if (err) {
+          console.log(err);
+          return res.status(400).json({
+            message: "User SignUp Request READ Fail! - 400",
+            page: -1,
+            limit: -1,
+            lastPageNum: -1,
+            data: [],
           });
+        }
+        const total_count = data.length > 0 ? data[0].total_count : 0;
+        const lastPageNum = Math.ceil(total_count / limit);
+        // console.log(total_count);
+        // 결과 반환
+        return res.status(200).json({
+          message: "User SignUp Request READ Success! - 200",
+          page,
+          limit,
+          lastPageNum,
+          data: data,
         });
-      }
+      });
     } catch (err) {
       console.log(err);
       res.status(500).json({ message: "Server Error - 500" });
@@ -714,51 +695,51 @@ const signupController = {
   },
 };
 
-const signupController_Regercy = {
-  // VR 중복 체크
-  dupleCheckHandler: (req, res) => {
-    const { id, vrNum, type } = req.body;
+// const signupController_Regercy = {
+//   // VR 중복 체크
+//   dupleCheckHandler: (req, res) => {
+//     const { id, vrNum, type } = req.body;
 
-    // MySQL DB 연동
-    if (type === "id") {
-      connection.query(
-        `SELECT * FROM teacher WHERE (teacher_uid = '${id}')`,
-        (error, rows, fields) => {
-          if (error) console.log(error);
-          if (rows.length) {
-            res.json({ data: "Fail" });
-          } else res.json({ data: "Success" });
-        }
-      );
-    } else {
-      connection.query(
-        `SELECT * FROM teacher WHERE (vr_number = '${vrNum}')`,
-        (error, rows, fields) => {
-          if (error) console.log(error);
-          if (rows.length) {
-            res.json({ data: "Fail" });
-          } else res.json({ data: "Success" });
-        }
-      );
-    }
-  },
-  // VR 회원가입
-  signupHandler: (req, res) => {
-    const { id, pwd, name, age, email, vrNum } = req.body;
-    // 서버측 2중 보안
-    if (!id || !pwd || !vrNum) res.json({ data: "Fail" });
-    // MySQL DB 연동
-    connection.query(
-      `INSERT INTO teacher VALUES ('${vrNum}', '${id}', '${pwd}')`,
-      (error) => {
-        if (error) {
-          console.log(error);
-          res.json({ data: "Fail" });
-        } else res.json({ data: "Success" });
-      }
-    );
-  },
-};
+//     // MySQL DB 연동
+//     if (type === "id") {
+//       connection.query(
+//         `SELECT * FROM teacher WHERE (teacher_uid = '${id}')`,
+//         (error, rows, fields) => {
+//           if (error) console.log(error);
+//           if (rows.length) {
+//             res.json({ data: "Fail" });
+//           } else res.json({ data: "Success" });
+//         }
+//       );
+//     } else {
+//       connection.query(
+//         `SELECT * FROM teacher WHERE (vr_number = '${vrNum}')`,
+//         (error, rows, fields) => {
+//           if (error) console.log(error);
+//           if (rows.length) {
+//             res.json({ data: "Fail" });
+//           } else res.json({ data: "Success" });
+//         }
+//       );
+//     }
+//   },
+//   // VR 회원가입
+//   signupHandler: (req, res) => {
+//     const { id, pwd, name, age, email, vrNum } = req.body;
+//     // 서버측 2중 보안
+//     if (!id || !pwd || !vrNum) res.json({ data: "Fail" });
+//     // MySQL DB 연동
+//     connection.query(
+//       `INSERT INTO teacher VALUES ('${vrNum}', '${id}', '${pwd}')`,
+//       (error) => {
+//         if (error) {
+//           console.log(error);
+//           res.json({ data: "Fail" });
+//         } else res.json({ data: "Success" });
+//       }
+//     );
+//   },
+// };
 
 module.exports = {
   signupController,

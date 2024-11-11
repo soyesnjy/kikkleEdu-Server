@@ -43,8 +43,8 @@ const BoardController = {
 
       // Pagination Last Number Select
       const count_query = `SELECT COUNT(*) FROM kk_board`;
-      const count_data = await fetchUserData(connection_KK, count_query);
-      const lastPageNum = Math.ceil(count_data[0]["COUNT(*)"] / limit);
+      // const count_data = await fetchUserData(connection_KK, count_query);
+      // const lastPageNum = Math.ceil(count_data[0]["COUNT(*)"] / limit);
       // console.log(lastPageNum);
       let select_query;
       // Board Detail Data Return Query
@@ -76,7 +76,7 @@ const BoardController = {
       b.kk_board_created_at,
       a.kk_agency_type,
       a.kk_agency_name,
-      a.kk_agency_idx
+      a.kk_agency_idx, (${count_query}) AS total_count
   FROM 
       kk_board AS b
   JOIN 
@@ -100,7 +100,9 @@ const BoardController = {
             message: err.sqlMessage,
           });
         }
-        // console.log(data);
+        const total_count = data.length > 0 ? data[0].total_count : 0;
+        const lastPageNum = Math.ceil(total_count / limit);
+        // console.log(total_count);
         // 결과 반환
         return res.status(200).json({
           message: "Board Access Success! - 200 OK",
