@@ -132,7 +132,6 @@ const sortDays = (arr) => {
   // 정렬 수행
   return arr.sort((a, b) => dayIndex[a] - dayIndex[b]).join("/");
 };
-
 // 희망 시간 정렬 메서드
 const sortTimes = (arr) => {
   const dayOrder = ["오전", "오후", "야간"];
@@ -455,7 +454,7 @@ const signupController = {
     const { SignUpData } = req.body;
     // console.log(SignUpData);
 
-    let parseSignUpData, parsepUid;
+    let parseSignUpData;
     try {
       // 입력값 파싱
       if (typeof SignUpData === "string") {
@@ -497,12 +496,11 @@ const signupController = {
       const user_table = KK_User_Table_Info[userClass].table;
       // const user_attribute = KK_User_Table_Info[userClass].attribute;
 
+      // 강사
       if (userClass === "teacher") {
         // Public URL을 가져오기 위해 파일 정보를 다시 가져옴
         let uploadFile = "";
         if (fileData) uploadFile = await fileDriveSave(fileData);
-
-        // if (!fileData) delete user_attribute.attr6; // fileData를 업데이트하지 않는 경우 목록에서 삭제
 
         const update_query = `UPDATE ${user_table} SET
         kk_teacher_introduction = ?,
@@ -541,76 +539,72 @@ const signupController = {
 
         // console.log(update_value_obj);
 
-        if (true) {
-          // 계정 생성 (비동기 처리)
-          connection_KK.query(
-            update_query,
-            Object.values(update_value_obj),
-            (error, rows, fields) => {
-              if (error) {
-                console.log(error);
-                res.status(400).json({ message: error.sqlMessage });
-              }
-              // 수업 변경일 경우 (기존 수업 삭제 -> 갱신된 수업 삽입)
-              else if (possClass) {
-                const table = KK_User_Table_Info["teacher_class"].table;
-                // const teacher_id = rows.insertId; // 삽입한 강사의 pKey
-                // teacher_class Table delete
-                const delete_query = `DELETE FROM kk_teacher_class WHERE kk_teacher_idx = ${userIdx};`;
-                connection_KK.query(delete_query, null, (err) => {
-                  if (error) {
-                    console.log(error);
-                    res.status(400).json({ message: error.sqlMessage });
-                  } else {
-                    // teacher_class Table Insert
-                    const insert_query = `INSERT INTO ${table} (kk_teacher_idx, kk_class_idx) VALUES ${possClass
-                      .map((el) => {
-                        return `(${userIdx}, ${el})`;
-                      })
-                      .join(", ")}`;
-
-                    connection_KK.query(insert_query, null, (err) => {
-                      if (error) {
-                        console.log(error);
-                        res.status(400).json({ message: error.sqlMessage });
-                      } else {
-                        console.log("Teacher Row DB UPDATE Success!");
-                        res.status(200).json({
-                          message: "Teacher SignUp Update Success! - 200 OK",
-                        });
-                      }
-                    });
-                  }
-                });
-              } else {
-                console.log("Teacher Row DB UPDATE Success!");
-                res
-                  .status(200)
-                  .json({ message: "Teacher SignUp Update Success! - 200 OK" });
-              }
+        connection_KK.query(
+          update_query,
+          Object.values(update_value_obj),
+          (error, rows, fields) => {
+            // 강사 정보 수정 실패
+            if (error) {
+              console.log(`Teacher Table Row Update Fail! - userIdx:${userIdx}
+                error: ${error}`);
+              return res.status(400).json({ message: error.sqlMessage });
             }
-          );
-        }
+            // 수업 변경일 경우 (기존 수업 삭제 -> 갱신된 수업 삽입)
+            else if (possClass) {
+              const table = KK_User_Table_Info["teacher_class"].table;
+              // const teacher_id = rows.insertId; // 삽입한 강사의 pKey
+
+              // 기존 수업 삭제 (Delete kk_teacher_class)
+              const delete_query = `DELETE FROM kk_teacher_class WHERE kk_teacher_idx = ${userIdx};`;
+              connection_KK.query(delete_query, null, (err) => {
+                // 기존 수업 삭제 실패
+                if (error) {
+                  console.log(`Teacher_Class Table Row Delete Fail! - userIdx:${userIdx}
+                    error: ${error}`);
+                  return res.status(400).json({ message: error.sqlMessage });
+                } else {
+                  // 갱신된 수업 삽입 (Insert kk_teacher_class)
+                  const insert_query = `INSERT INTO ${table} (kk_teacher_idx, kk_class_idx) VALUES ${possClass
+                    .map((el) => {
+                      return `(${userIdx}, ${el})`;
+                    })
+                    .join(", ")}`;
+
+                  connection_KK.query(insert_query, null, (err) => {
+                    // 갱신된 수업 삽입 실패
+                    if (error) {
+                      console.log(`Teacher_Class Table Row Insert Fail! - userIdx:${userIdx}
+                        error: ${error}`);
+                      return res
+                        .status(400)
+                        .json({ message: error.sqlMessage });
+                    } else {
+                      console.log(
+                        `Teacher Row DB UPDATE Success! - userIdx:${userIdx}`
+                      );
+                      return res.status(200).json({
+                        message: "Teacher SignUp Update Success! - 200 OK",
+                      });
+                    }
+                  });
+                }
+              });
+            } else {
+              console.log(
+                `Teacher Row DB UPDATE Success! - userIdx:${userIdx}`
+              );
+              return res
+                .status(200)
+                .json({ message: "Teacher SignUp Update Success! - 200 OK" });
+            }
+          }
+        );
       }
-      // TODO# 기관 Update
+      // 기관
       else {
         // Public URL을 가져오기 위해 파일 정보를 다시 가져옴
         // let uploadFile = "";
         // if (fileData) uploadFile = await fileDriveSave(fileData);
-
-        // const update_query = `UPDATE ${user_table} SET (${Object.values(
-        //   user_attribute
-        // ).join(", ")}) VALUES (${Object.values(user_attribute)
-        //   .map((el) => "?")
-        //   .join(", ")})`;
-
-        // const update_query = `UPDATE ${user_table} SET ${Object.values(
-        //   user_attribute
-        // )
-        //   .map((el) => {
-        //     return `${el} = ?`;
-        //   })
-        //   .join(", ")} WHERE kk_agency_idx = ?`;
 
         const update_query = `UPDATE ${user_table} SET
         kk_agency_name = ?,
@@ -621,7 +615,6 @@ const signupController = {
         WHERE kk_agency_idx = ?`;
         // console.log(update_query);
 
-        // INSERT Value 명시
         const update_value_obj = {
           attr3: name,
           attr4: address,
@@ -632,24 +625,22 @@ const signupController = {
         };
         // console.log(update_value_obj);
 
-        if (true) {
-          // 계정 생성 (비동기 처리)
-          connection_KK.query(
-            update_query,
-            Object.values(update_value_obj),
-            (error, rows, fields) => {
-              if (error) {
-                console.log(error);
-                res.status(400).json({ message: error.sqlMessage });
-              } else {
-                console.log("Agency Row DB Update Success!");
-                res
-                  .status(200)
-                  .json({ message: "Agency Update Success! - 200 OK" });
-              }
+        connection_KK.query(
+          update_query,
+          Object.values(update_value_obj),
+          (error, rows, fields) => {
+            if (error) {
+              console.log(`Agency Table Row Update Fail! - userIdx:${userIdx}
+                error: ${error}`);
+              return res.status(400).json({ message: error.sqlMessage });
+            } else {
+              console.log(`Agency Row DB Update Success! - userIdx:${userIdx}`);
+              return res
+                .status(200)
+                .json({ message: "Agency Update Success! - 200 OK" });
             }
-          );
-        }
+          }
+        );
       }
     } catch (err) {
       console.error(err);
