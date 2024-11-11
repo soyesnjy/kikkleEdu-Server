@@ -4,6 +4,7 @@ const router = express.Router();
 
 const { errController } = require("../controller/Legacy/Tips/index");
 const { directoryController } = require("../controller/directory");
+const { loginController_KK } = require("../controller/login");
 
 const {
   getDirectoryDataRead,
@@ -13,10 +14,16 @@ const {
   deleteDirectoryDataDelete,
 } = directoryController;
 
-router.get("/", getDirectoryDataRead);
-router.post("/create", postDirectoryDataCreate);
-router.post("/create/video", postDirectoryVideoFileDataCreateV2);
-router.delete("/delete", deleteDirectoryDataDelete);
+const { vaildateKKTokenCheck } = loginController_KK;
+
+router.get("/", vaildateKKTokenCheck, getDirectoryDataRead);
+router.post("/create", vaildateKKTokenCheck, postDirectoryDataCreate);
+router.post(
+  "/create/video",
+  vaildateKKTokenCheck,
+  postDirectoryVideoFileDataCreateV2
+);
+router.delete("/delete", vaildateKKTokenCheck, deleteDirectoryDataDelete);
 
 // const multer = require("multer");
 // const upload = multer({ storage: multer.memoryStorage() }); // 메모리 스토리지 사용
