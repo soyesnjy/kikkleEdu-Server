@@ -239,9 +239,7 @@ const signupController = {
       if (user_data[0]) {
         // 같은 uid의 User가 이미 존재하는 경우
         console.log(`${userClass} Table has Duplicated User - pUid:${pUid}`);
-        return res
-          .status(403)
-          .json({ message: "Duplicate User - 403 Forbidden" });
+        return res.status(403).json({ message: "중복된 이메일입니다!" });
       }
       // 3. INSERT USER (row가 없는 경우). 중복 검사 통과
       else {
@@ -251,9 +249,9 @@ const signupController = {
           const uploadFile = await fileDriveSave(fileData);
           if (!uploadFile) {
             console.log(`SignUp File Drive Upload Fail - pUid:${pUid}`);
-            return res
-              .status(400)
-              .json({ message: "SignUp File Drive Upload Fail - 400" });
+            return res.status(400).json({
+              message: "드라이브 파일 업로드 실패",
+            });
           }
           // 2024.08.30: import 에러로 인한 String 처리
           const insert_query = `INSERT INTO kk_teacher (
@@ -299,7 +297,9 @@ const signupController = {
               if (error) {
                 console.log(`Teacher Table Insert Error - pUid:${pUid}`);
                 console.log(error);
-                res.status(400).json({ message: error.sqlMessage });
+                return res
+                  .status(400)
+                  .json({ message: "강사 테이블 삽입 에러" });
               } else {
                 // teacher_class Table Insert
                 const teacher_id = rows.insertId; // 삽입한 강사의 pKey
@@ -319,14 +319,16 @@ const signupController = {
                       `Teacher_Class Table Insert Error - pUid:${pUid}`
                     );
                     console.log(error);
-                    res.status(400).json({ message: error.sqlMessage });
+                    return res
+                      .status(400)
+                      .json({ message: `강사_수업 테이블 삽입 에러` });
                   } else {
                     console.log(
                       `Teacher Row DB INSERT Success! - pUid:${pUid}`
                     );
-                    res
+                    return res
                       .status(200)
-                      .json({ message: "Teacher SignUp Success! - 200 OK" });
+                      .json({ message: "강사 회원가입 성공!" });
                   }
                 });
               }
@@ -372,12 +374,12 @@ const signupController = {
               if (error) {
                 console.log(`Agency Table Insert Error - pUid:${pUid}`);
                 console.log(error);
-                res.status(400).json({ message: error.sqlMessage });
+                return res
+                  .status(400)
+                  .json({ message: "기관 테이블 삽입 에러" });
               } else {
                 console.log(`Agency Row DB INSERT Success! - pUid:${pUid}`);
-                res
-                  .status(200)
-                  .json({ message: "Agency SignUp Success! - 200 OK" });
+                return res.status(200).json({ message: "기관 회원가입 성공!" });
               }
             }
           );
