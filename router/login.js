@@ -4,22 +4,22 @@ const router = express.Router();
 const { errController } = require("../controller/Legacy/Tips/index");
 // const { loginController } = require("../controller/index");
 const {
-  loginController,
   loginController_KK,
+  // loginController,
   // loginController_Regercy,
 } = require("../controller/login");
 
-const {
-  // OAuth
-  oauthUrlHandler,
-  oauthKakaoUrlHandler,
-  oauthGoogleAccessTokenHandler,
-  oauthKakaoAccessTokenHandler,
-  // AI 일반 로그인
-  postAILoginHandler,
-  getAILogoutHandler,
-  postAIRefreshTokenUpdateHandler,
-} = loginController;
+// const {
+//   // OAuth
+//   oauthUrlHandler,
+//   oauthKakaoUrlHandler,
+//   oauthGoogleAccessTokenHandler,
+//   oauthKakaoAccessTokenHandler,
+//   // AI 일반 로그인
+//   postAILoginHandler,
+//   getAILogoutHandler,
+//   postAIRefreshTokenUpdateHandler,
+// } = loginController;
 
 const {
   // 구글 로그인
