@@ -20,11 +20,7 @@ const { vaildateKKTokenCheck } = loginController_KK;
 
 // KK 회원가입 컨트롤러
 router.get("/read", vaildateKKTokenCheck, getSignupDataRead); // Read
-router.post(
-  "/create",
-  // vaildateKKTokenCheck,
-  postSignupDataCreate
-); // Create
+router.post("/create", postSignupDataCreate); // Create
 router.post("/update", vaildateKKTokenCheck, postSignupDataUpdate); // Update
 router.delete("/delete", vaildateKKTokenCheck, deleteReviewDataDelete); // Delete
 
