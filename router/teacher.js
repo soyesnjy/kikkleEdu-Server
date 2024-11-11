@@ -8,7 +8,11 @@ const { loginController_KK } = require("../controller/login");
 const { getKKTeacherDataRead } = teacherController;
 const { vaildateKKTokenCheck } = loginController_KK;
 
-router.get("/", vaildateKKTokenCheck, getKKTeacherDataRead);
+router.get(
+  "/",
+  // vaildateKKTokenCheck,
+  getKKTeacherDataRead
+);
 
 // 에러 메세지 처리
 router.use(errController.errMessageHandler);
