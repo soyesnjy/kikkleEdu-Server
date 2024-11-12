@@ -100,10 +100,10 @@ const teacherController = {
       : "ORDER BY t.kk_teacher_created_at DESC"
   }
   ${
-    // 메인페이지 5개, 기관 페이지 4개
+    // 메인페이지 5개, 기관 페이지 6개
     main ? "LIMIT 5" : ""
   }
-  ${classType ? "LIMIT 4" : ""};
+  ${classType ? "LIMIT 6" : ""};
 `;
 
       // console.log(select_query);
