@@ -362,7 +362,7 @@ const signupController = {
             attr5: phoneNumber,
             attr6: typeA,
             attr7: uploadFile ? uploadFile.data.webContentLink : "",
-            attr8: 0,
+            attr8: 1,
           };
           // console.log(insert_value_obj);
 
