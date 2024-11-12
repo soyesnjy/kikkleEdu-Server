@@ -16,14 +16,19 @@ const teacherController = {
     try {
       const query = req.query;
       const {
+        // 예약 페이지 관련
         classIdx,
         dayofweek,
         partTime,
+        // 콘텐츠 + 강사 List 페이지 관련 ([발레, 댄스, 요가, 필라테스, 미술] 탭이 있는 곳에서 사용)
         classTag,
+        // 강사 Detail 페이지 관련 (강사 번호)
         teacherIdx,
+        // 메인 페이지 관련
         main,
+        // 기관 페이지 관련 (유치원, 초등학교...)
         classType,
-      } = query; // classIdx 필수, dayofweek 선택
+      } = query;
 
       // console.log(query);
 
