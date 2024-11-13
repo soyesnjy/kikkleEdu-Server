@@ -867,15 +867,20 @@ const loginController_KK = {
   vaildateKKTokenCheck: async (req, res, next) => {
     // const { userClass, userIdx } = req.query; // Request Query - userClass, userIdx
     // const refreshToken = req.cookies.refreshToken; // Request Cookie - refreshToken => 스토어 배포 어플에 Cookie 적용이 안됨
-
     // authorization 헤더 체크
-    const authHeader = req.headers["authorization"];
-    const refreshToken = authHeader && authHeader?.split(" ")[1]; // split 하는 이유: 'Barer [TokenValue]' 형식으로 전달받기 때문
-
     // const accessToken = req.session.accessToken;
     // const sessionId = req.sessionID;
 
+    // 미로그인 회원 접근
+    if (!req) {
+      console.log(`미로그인 회원 접근`);
+      return;
+    }
+
     try {
+      const authHeader = req.headers["authorization"];
+      const refreshToken = authHeader && authHeader?.split(" ")[1]; // split 하는 이유: 'Barer [TokenValue]' 형식으로 전달받기 때문
+
       // accessToken이 있는 경우 - accessToken은 세션에 저장된 값이기 때문에 비교적 간단한 검사 진행
       // if (accessToken) {
       //   // accessToken Decoding
@@ -977,7 +982,7 @@ const loginController_KK = {
           .json({ message: "로그인 세션이 만료되었습니다!" });
       }
     } catch (err) {
-      console.log(err.message);
+      console.log(err);
       res.status(500).json({ message: "Server Error - 500" });
     }
   },

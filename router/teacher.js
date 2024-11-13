@@ -10,7 +10,18 @@ const { vaildateKKTokenCheck } = loginController_KK;
 
 router.get(
   "/",
-  // vaildateKKTokenCheck,
+  // 조건부 토큰 체크
+  (req, res, next) => {
+    const query = req.query;
+    const { main, classType } = query;
+    // 메인 or 기관 페이지에서 호출할 경우 토큰 체크 X
+    if (main || classType) {
+      next();
+      return;
+    }
+    // 그 외 토큰 체크
+    vaildateKKTokenCheck(req, res, next);
+  },
   getKKTeacherDataRead
 );
 
