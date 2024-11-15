@@ -74,19 +74,19 @@ ${
     a.kk_attend_date,
     a.kk_attend_status,
     ag.kk_agency_name, (${count_query}) AS total_count
-FROM kk_attend AS a
-JOIN kk_reservation AS r ON a.kk_reservation_idx = r.kk_reservation_idx
-JOIN kk_teacher AS t ON r.kk_teacher_idx = t.kk_teacher_idx
-JOIN kk_class AS c ON r.kk_class_idx = c.kk_class_idx
-JOIN kk_agency AS ag ON r.kk_agency_idx = ag.kk_agency_idx
-${
-  agencyIdx
-    ? `WHERE r.kk_agency_idx = '${keyValue}' AND r.kk_reservation_approve_status = '1'`
-    : userIdx
-    ? `WHERE r.kk_teacher_idx = '${keyValue}' AND r.kk_reservation_approve_status = '1'`
-    : `WHERE r.kk_reservation_approve_status = '1'`
-} ${name ? `AND t.kk_teacher_name LIKE '%${name}%'` : ""}
-ORDER BY a.kk_attend_date DESC LIMIT ? OFFSET ?;
+    FROM kk_attend AS a
+    JOIN kk_reservation AS r ON a.kk_reservation_idx = r.kk_reservation_idx
+    JOIN kk_teacher AS t ON r.kk_teacher_idx = t.kk_teacher_idx
+    JOIN kk_class AS c ON r.kk_class_idx = c.kk_class_idx
+    JOIN kk_agency AS ag ON r.kk_agency_idx = ag.kk_agency_idx
+    ${
+      agencyIdx
+        ? `WHERE r.kk_agency_idx = '${keyValue}' AND r.kk_reservation_approve_status = '1'`
+        : userIdx
+        ? `WHERE r.kk_teacher_idx = '${keyValue}' AND r.kk_reservation_approve_status = '1'`
+        : `WHERE r.kk_reservation_approve_status = '1'`
+    } ${name ? `AND t.kk_teacher_name LIKE '%${name}%'` : ""}
+    ORDER BY a.kk_attend_date DESC LIMIT ? OFFSET ?;
 `;
       // console.log(select_query);
       const select_values = [limit, offset];

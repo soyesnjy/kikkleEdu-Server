@@ -935,7 +935,7 @@ const loginController_KK = {
 
         // 관리자 프리패스
         if (type === "admin") {
-          console.log("Admin Access");
+          // console.log("Admin Access");
           next();
           return;
         }
