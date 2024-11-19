@@ -219,7 +219,7 @@ ORDER BY
   // KK Reservation Data UPDATE
   postKKReservationDataUpdate: async (req, res) => {
     const { SignUpData } = req.body;
-    console.log(SignUpData);
+    // console.log(SignUpData);
 
     let parseSignUpData, sortedReservationDate;
     try {
@@ -232,7 +232,7 @@ ORDER BY
         reservationIdx,
         dateArr,
         teacherIdx,
-        attendTrigger,
+        // attendTrigger,
         approveStatus, // 승인 상태 공통
       } = parseSignUpData;
 
@@ -272,11 +272,11 @@ ORDER BY
       // console.log(update_value_obj);
 
       // reservationIdx에 연결된 attend row select
-      const select_query = `SELECT * FROM kk_attend WHERE kk_reservation_idx = ${reservationIdx}`;
-      const select_attend_data = await fetchUserData(
-        connection_KK,
-        select_query
-      );
+      // const select_query = `SELECT * FROM kk_attend WHERE kk_reservation_idx = ${reservationIdx}`;
+      // const select_attend_data = await fetchUserData(
+      //   connection_KK,
+      //   select_query
+      // );
 
       // console.log(select_attend_data);
 

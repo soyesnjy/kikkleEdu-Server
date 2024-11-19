@@ -73,7 +73,8 @@ ${
     a.kk_attend_idx,
     a.kk_attend_date,
     a.kk_attend_status,
-    ag.kk_agency_name, (${count_query}) AS total_count
+    ag.kk_agency_name, 
+    (${count_query}) AS total_count
     FROM kk_attend AS a
     JOIN kk_reservation AS r ON a.kk_reservation_idx = r.kk_reservation_idx
     JOIN kk_teacher AS t ON r.kk_teacher_idx = t.kk_teacher_idx
