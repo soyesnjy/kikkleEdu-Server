@@ -221,7 +221,7 @@ ORDER BY
     const { SignUpData } = req.body;
     console.log(SignUpData);
 
-    let parseSignUpData;
+    let parseSignUpData, sortedReservationDate;
     try {
       // 입력값 파싱
       if (typeof SignUpData === "string") {
@@ -243,14 +243,28 @@ ORDER BY
           .json({ message: "Non Reservation Input Value - 400 Bad Request" });
       }
 
+      // dateArr 정렬
+      if (dateArr) {
+        sortedReservationDate = [
+          ...dateArr.sort((a, b) => new Date(a) - new Date(b)),
+        ];
+      }
+
       // const reservation_table = KK_User_Table_Info["reservation"].table;
       // const reservation_attribute = KK_User_Table_Info["reservation"].attribute;
 
-      const update_query = `UPDATE kk_reservation SET kk_teacher_idx = ?, kk_reservation_approve_status = ? WHERE kk_reservation_idx = ?`;
+      const update_query = `UPDATE 
+      kk_reservation SET kk_teacher_idx = ?,
+      ${dateArr ? "kk_reservation_date = ?," : ""}
+      kk_reservation_approve_status = ?
+      WHERE kk_reservation_idx = ?`;
       // console.log(update_query);
 
       const update_value_obj = {
         attr3: teacherIdx,
+        ...(dateArr && {
+          attr4: sortedReservationDate.join("/"),
+        }),
         attr9: approveStatus,
         pKey: reservationIdx,
       };
@@ -275,31 +289,68 @@ ORDER BY
               console.log(error);
               res.status(400).json({ message: error.sqlMessage });
             }
-            // 첫 강사 확정일 경우 && attend table에 reservationIdx와 연결된 row가 없을 경우
-            else if (attendTrigger && !select_attend_data.length) {
-              // attend Table Insert
-              // 2024.08.30: import 에러 관련 처리
-              const insert_query = `INSERT INTO kk_attend (kk_reservation_idx, kk_attend_date, kk_attend_status) VALUES ${dateArr
-                .map((el) => {
-                  return `(${reservationIdx}, '${el}', 0)`;
-                })
-                .join(", ")}`;
-
-              // console.log(insert_query);
-
-              connection_KK.query(insert_query, null, (err) => {
+            // 날짜 수정인 경우
+            else if (dateArr) {
+              // 출석 테이블 기존 날짜 삭제 (Delete kk_attend)
+              const delete_query = `DELETE FROM kk_attend WHERE kk_reservation_idx = ${reservationIdx};`;
+              connection_KK.query(delete_query, null, (err) => {
+                // 기존 날짜 삭제 실패
                 if (error) {
-                  console.log(error);
-                  res.status(400).json({ message: error.sqlMessage });
+                  console.log(`Attend Table Row Delete Fail! - reservationIdx:${reservationIdx}
+                    error: ${error}`);
+                  return res.status(400).json({ message: error.sqlMessage });
                 } else {
-                  console.log("Reservation Update && Attend Insert Success!");
-                  res.status(200).json({
-                    message:
-                      "Reservation Update && Attend Insert Success! - 200 OK",
+                  // 갱신된 날짜 삽입 (Insert kk_attend)
+                  const insert_query = `INSERT INTO kk_attend (kk_reservation_idx, kk_attend_date, kk_attend_status) VALUES ${sortedReservationDate
+                    .map((el) => {
+                      return `(${reservationIdx}, '${el}', 0)`;
+                    })
+                    .join(", ")}`;
+
+                  // console.log(insert_query);
+
+                  connection_KK.query(insert_query, null, (err) => {
+                    if (error) {
+                      console.log(error);
+                      res.status(400).json({ message: error.sqlMessage });
+                    } else {
+                      console.log(
+                        "Reservation Update && Attend Insert Success!"
+                      );
+                      res.status(200).json({
+                        message:
+                          "Reservation Update && Attend Insert Success! - 200 OK",
+                      });
+                    }
                   });
                 }
               });
             }
+            // // 첫 강사 확정일 경우 && attend table에 reservationIdx와 연결된 row가 없을 경우
+            // else if (false) {
+            //   // attend Table Insert
+            //   // 2024.08.30: import 에러 관련 처리
+            //   const insert_query = `INSERT INTO kk_attend (kk_reservation_idx, kk_attend_date, kk_attend_status) VALUES ${dateArr
+            //     .map((el) => {
+            //       return `(${reservationIdx}, '${el}', 0)`;
+            //     })
+            //     .join(", ")}`;
+
+            //   // console.log(insert_query);
+
+            //   connection_KK.query(insert_query, null, (err) => {
+            //     if (error) {
+            //       console.log(error);
+            //       res.status(400).json({ message: error.sqlMessage });
+            //     } else {
+            //       console.log("Reservation Update && Attend Insert Success!");
+            //       res.status(200).json({
+            //         message:
+            //           "Reservation Update && Attend Insert Success! - 200 OK",
+            //       });
+            //     }
+            //   });
+            // }
             // 확정 강사 수정일 경우
             else {
               console.log("Reservation Row DB INSERT Success!");
