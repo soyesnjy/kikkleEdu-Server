@@ -232,7 +232,6 @@ ORDER BY
         reservationIdx,
         dateArr,
         teacherIdx,
-        // attendTrigger,
         approveStatus, // 승인 상태 공통
       } = parseSignUpData;
 
@@ -253,7 +252,7 @@ ORDER BY
       // const reservation_table = KK_User_Table_Info["reservation"].table;
       // const reservation_attribute = KK_User_Table_Info["reservation"].attribute;
 
-      const update_query = `UPDATE 
+      const update_query = `UPDATE
       kk_reservation SET kk_teacher_idx = ?,
       ${dateArr ? "kk_reservation_date = ?," : ""}
       kk_reservation_approve_status = ?
@@ -280,87 +279,58 @@ ORDER BY
 
       // console.log(select_attend_data);
 
-      if (true) {
-        connection_KK.query(
-          update_query,
-          Object.values(update_value_obj),
-          (error, rows, fields) => {
-            if (error) {
-              console.log(error);
-              res.status(400).json({ message: error.sqlMessage });
-            }
-            // 날짜 수정인 경우
-            else if (dateArr) {
-              // 출석 테이블 기존 날짜 삭제 (Delete kk_attend)
-              const delete_query = `DELETE FROM kk_attend WHERE kk_reservation_idx = ${reservationIdx};`;
-              connection_KK.query(delete_query, null, (err) => {
-                // 기존 날짜 삭제 실패
-                if (error) {
-                  console.log(`Attend Table Row Delete Fail! - reservationIdx:${reservationIdx}
-                    error: ${error}`);
-                  return res.status(400).json({ message: error.sqlMessage });
-                } else {
-                  // 갱신된 날짜 삽입 (Insert kk_attend)
-                  const insert_query = `INSERT INTO kk_attend (kk_reservation_idx, kk_attend_date, kk_attend_status) VALUES ${sortedReservationDate
-                    .map((el) => {
-                      return `(${reservationIdx}, '${el}', 0)`;
-                    })
-                    .join(", ")}`;
-
-                  // console.log(insert_query);
-
-                  connection_KK.query(insert_query, null, (err) => {
-                    if (error) {
-                      console.log(error);
-                      res.status(400).json({ message: error.sqlMessage });
-                    } else {
-                      console.log(
-                        "Reservation Update && Attend Insert Success!"
-                      );
-                      res.status(200).json({
-                        message:
-                          "Reservation Update && Attend Insert Success! - 200 OK",
-                      });
-                    }
-                  });
-                }
-              });
-            }
-            // // 첫 강사 확정일 경우 && attend table에 reservationIdx와 연결된 row가 없을 경우
-            // else if (false) {
-            //   // attend Table Insert
-            //   // 2024.08.30: import 에러 관련 처리
-            //   const insert_query = `INSERT INTO kk_attend (kk_reservation_idx, kk_attend_date, kk_attend_status) VALUES ${dateArr
-            //     .map((el) => {
-            //       return `(${reservationIdx}, '${el}', 0)`;
-            //     })
-            //     .join(", ")}`;
-
-            //   // console.log(insert_query);
-
-            //   connection_KK.query(insert_query, null, (err) => {
-            //     if (error) {
-            //       console.log(error);
-            //       res.status(400).json({ message: error.sqlMessage });
-            //     } else {
-            //       console.log("Reservation Update && Attend Insert Success!");
-            //       res.status(200).json({
-            //         message:
-            //           "Reservation Update && Attend Insert Success! - 200 OK",
-            //       });
-            //     }
-            //   });
-            // }
-            // 확정 강사 수정일 경우
-            else {
-              console.log("Reservation Row DB INSERT Success!");
-              res.status(200).json({
-                message: "Reservation Update Success! - 200 OK",
-              });
-            }
+      connection_KK.query(
+        update_query,
+        Object.values(update_value_obj),
+        (error, rows, fields) => {
+          if (error) {
+            console.log(error);
+            res.status(400).json({ message: error.sqlMessage });
           }
-        );
-      }
+          // 날짜 수정인 경우
+          else if (dateArr) {
+            // 출석 테이블 기존 날짜 삭제 (Delete kk_attend)
+            const delete_query = `DELETE FROM kk_attend WHERE kk_reservation_idx = ${reservationIdx};`;
+            connection_KK.query(delete_query, null, (err) => {
+              // 기존 날짜 삭제 실패
+              if (error) {
+                console.log(`Attend Table Row Delete Fail! - reservationIdx:${reservationIdx}
+                    error: ${error}`);
+                return res.status(400).json({ message: error.sqlMessage });
+              } else {
+                // 갱신된 날짜 삽입 (Insert kk_attend)
+                const insert_query = `INSERT INTO kk_attend (kk_reservation_idx, kk_attend_date, kk_attend_status) VALUES ${sortedReservationDate
+                  .map((el) => {
+                    return `(${reservationIdx}, '${el}', 0)`;
+                  })
+                  .join(", ")}`;
+
+                // console.log(insert_query);
+
+                connection_KK.query(insert_query, null, (err) => {
+                  if (error) {
+                    console.log(error);
+                    res.status(400).json({ message: error.sqlMessage });
+                  } else {
+                    console.log("Reservation Update && Attend Insert Success!");
+                    res.status(200).json({
+                      message:
+                        "Reservation Update && Attend Insert Success! - 200 OK",
+                    });
+                  }
+                });
+              }
+            });
+          }
+          // 그 외
+          else {
+            console.log("Reservation Row DB INSERT Success!");
+            res.status(200).json({
+              message: "Reservation Update Success! - 200 OK",
+            });
+          }
+        }
+      );
     } catch (err) {
       console.error(err);
       res.status(500).json({ message: "Server Error - 500 Bad Gateway" });
