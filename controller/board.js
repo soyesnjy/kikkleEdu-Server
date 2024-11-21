@@ -50,45 +50,45 @@ const BoardController = {
       // Board Detail Data Return Query
       if (boardIdx) {
         select_query = `SELECT 
-      b.kk_board_title,
-      b.kk_board_content,
-      b.kk_board_private,
-      b.kk_board_created_at,
-      a.kk_agency_type,
-      a.kk_agency_name,
-      a.kk_agency_idx
-  FROM 
-      kk_board AS b
-  JOIN 
-      kk_agency AS a ON b.kk_agency_idx = a.kk_agency_idx
-  WHERE b.kk_board_idx = '${boardIdx}'
-  ORDER BY 
-      b.kk_board_created_at DESC LIMIT ? OFFSET ?;
-  `;
+        b.kk_board_title,
+        b.kk_board_content,
+        b.kk_board_private,
+        b.kk_board_created_at,
+        a.kk_agency_type,
+        a.kk_agency_name,
+        a.kk_agency_idx
+        FROM 
+            kk_board AS b
+        JOIN 
+            kk_agency AS a ON b.kk_agency_idx = a.kk_agency_idx
+        WHERE b.kk_board_idx = '${boardIdx}'
+        ORDER BY 
+            b.kk_board_created_at DESC LIMIT ? OFFSET ?;
+        `;
       }
       // Board List Data Return Query
       else {
         select_query = `SELECT 
-      b.kk_board_idx,
-      b.kk_board_type,
-      b.kk_board_title,
-      b.kk_board_private,
-      b.kk_board_created_at,
-      a.kk_agency_type,
-      a.kk_agency_name,
-      a.kk_agency_idx, (${count_query}) AS total_count
-  FROM 
-      kk_board AS b
-  JOIN 
-      kk_agency AS a ON b.kk_agency_idx = a.kk_agency_idx
-  ORDER BY 
-      CASE 
-          WHEN a.kk_agency_type = 'admin' THEN 0
-          ELSE 1
-      END,
-      b.kk_board_created_at DESC 
-  LIMIT ? OFFSET ?;
-  `;
+        b.kk_board_idx,
+        b.kk_board_type,
+        b.kk_board_title,
+        b.kk_board_private,
+        b.kk_board_created_at,
+        a.kk_agency_type,
+        a.kk_agency_name,
+        a.kk_agency_idx, (${count_query}) AS total_count
+        FROM 
+            kk_board AS b
+        JOIN 
+            kk_agency AS a ON b.kk_agency_idx = a.kk_agency_idx
+        ORDER BY 
+            CASE 
+                WHEN a.kk_agency_type = 'admin' THEN 0
+                ELSE 1
+            END,
+            b.kk_board_created_at DESC 
+        LIMIT ? OFFSET ?;
+        `;
       }
 
       // console.log(select_query);
@@ -132,7 +132,6 @@ const BoardController = {
   postKKBoardDataCreate: async (req, res) => {
     const { data } = req.body;
     // console.log(data);
-
     let parseData;
 
     try {
@@ -205,100 +204,74 @@ const BoardController = {
       res.status(500).json({ message: "Server Error - 500 Bad Gateway" });
     }
   },
-  // TODO# KK Board Data UPDATE
+  // KK Board Data UPDATE
   postKKBoardDataUpdate: async (req, res) => {
-    const { SignUpData } = req.body;
-    console.log(SignUpData);
+    const { data } = req.body;
+    // console.log(data);
+    let parseData;
 
-    let parseSignUpData;
     try {
       // 입력값 파싱
-      if (typeof SignUpData === "string") {
-        parseSignUpData = JSON.parse(SignUpData);
-      } else parseSignUpData = SignUpData;
+      if (typeof data === "string") {
+        parseData = JSON.parse(data);
+      } else parseData = data;
 
-      const {
-        reservationIdx,
-        dateArr,
-        teacherIdx,
-        attendTrigger,
-        approveStatus, // 승인 상태 공통
-      } = parseSignUpData;
+      const { boardIdx, title, content } = parseData;
 
-      // Input 없을 경우
-      if (!reservationIdx) {
-        return res
-          .status(400)
-          .json({ message: "Non Reservation Input Value - 400 Bad Request" });
+      // 필수 Input 없을 경우
+      if (!boardIdx || !title || !content) {
+        console.log("Non Input Value - 400");
+        return res.status(400).json({ message: "Non Input Value - 400" });
       }
 
-      // const reservation_table = KK_User_Table_Info["reservation"].table;
-      // const reservation_attribute = KK_User_Table_Info["reservation"].attribute;
+      // 게시글 DB update
 
-      const update_query = `UPDATE kk_reservation SET kk_teacher_idx = ?, kk_reservation_approve_status = ? WHERE kk_reservation_idx = ?`;
-      // console.log(update_query);
+      // update Board
+      const update_query = `UPDATE kk_board SET
+      kk_board_title = ?,
+      kk_board_content = ?
+      WHERE kk_board_idx = ?`;
 
+      // update Value 명시
       const update_value_obj = {
-        attr3: teacherIdx,
-        attr9: approveStatus,
-        pKey: reservationIdx,
+        attr3: title, // 강사 idx. 관리자 페이지에서 update
+        attr4: content,
+        pKey: boardIdx,
       };
 
-      // console.log(update_value_obj);
-
-      // reservationIdx에 연결된 attend row select
-      const select_query = `SELECT * FROM kk_attend WHERE kk_reservation_idx = ${reservationIdx}`;
-      const select_attend_data = await fetchUserData(
-        connection_KK,
-        select_query
-      );
-
-      // console.log(select_attend_data);
-
-      if (true) {
-        connection_KK.query(
+      try {
+        await queryAsync(
+          connection_KK,
           update_query,
-          Object.values(update_value_obj),
-          (error, rows, fields) => {
-            if (error) {
-              console.log(error);
-              res.status(400).json({ message: error.sqlMessage });
-            }
-            // 첫 강사 확정일 경우 && attend table에 reservationIdx와 연결된 row가 없을 경우
-            else if (attendTrigger && !select_attend_data.length) {
-              // attend Table Insert
-              // 2024.08.30: import 에러 관련 처리
-              const insert_query = `INSERT INTO kk_attend (kk_reservation_idx, kk_attend_date, kk_attend_status) VALUES ${dateArr
-                .map((el) => {
-                  return `(${reservationIdx}, '${el}', 0)`;
-                })
-                .join(", ")}`;
-
-              // console.log(insert_query);
-
-              connection_KK.query(insert_query, null, (err) => {
-                if (error) {
-                  console.log(error);
-                  res.status(400).json({ message: error.sqlMessage });
-                } else {
-                  console.log("Reservation Update && Attend Insert Success!");
-                  res.status(200).json({
-                    message:
-                      "Reservation Update && Attend Insert Success! - 200 OK",
-                  });
-                }
-              });
-            }
-            // 확정 강사 수정일 경우
-            else {
-              console.log("Reservation Row DB INSERT Success!");
-              res.status(200).json({
-                message: "Reservation Update Success! - 200 OK",
-              });
-            }
-          }
+          Object.values(update_value_obj)
         );
+        console.log(`Board Row DB UPDATE Success!`);
+        return res.status(200).json({
+          message: "Board Row DB UPDATE Success! - 200 OK",
+        });
+      } catch (err) {
+        console.error("Error executing query:", err);
+        return res.status(500).json({
+          message: `Server Error: ${err.sqlMessage}`,
+        });
       }
+
+      // 게시글 생성
+      // connection_KK.query(
+      //   update_query,
+      //   Object.values(update_value_obj),
+      //   (error, rows, fields) => {
+      //     if (error) {
+      //       console.log(error);
+      //       res.status(400).json({ message: error.sqlMessage });
+      //     } else {
+      //       console.log("Board Row DB INSERT Success!");
+      //       res.status(200).json({
+      //         message: "Board Row DB INSERT Success! - 200 OK",
+      //       });
+      //     }
+      //   }
+      // );
     } catch (err) {
       console.error(err);
       res.status(500).json({ message: "Server Error - 500 Bad Gateway" });
