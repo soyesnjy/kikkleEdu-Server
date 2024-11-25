@@ -151,14 +151,14 @@ const fileDriveSave = async (fileData) => {
     });
 
     // 특정 계정에게 파일 공유 설정 (writer 권한)
-    await drive.permissions.create({
-      fileId: file.data.id,
-      requestBody: {
-        role: "writer",
-        type: "user",
-        emailAddress: "soyesnjy@gmail.com",
-      },
-    });
+    // await drive.permissions.create({
+    //   fileId: file.data.id,
+    //   requestBody: {
+    //     role: "writer",
+    //     type: "user",
+    //     emailAddress: "soyesnjy@gmail.com",
+    //   },
+    // });
 
     // Public URL을 가져오기 위해 파일 정보를 다시 가져옴
     const uploadFile = await drive.files.get({

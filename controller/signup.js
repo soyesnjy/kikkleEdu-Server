@@ -97,15 +97,15 @@ const fileDriveSave = async (fileData) => {
     });
 
     // soyesnjy@gmail.com 계정에게 파일 공유 설정 (writer 권한)
-    await drive.permissions.create({
-      fileId: file.data.id,
-      requestBody: {
-        role: "writer",
-        type: "user",
-        emailAddress: "soyesnjy@gmail.com",
-      },
-      // transferOwnership: true, // role:'owner' 일 경우
-    });
+    // await drive.permissions.create({
+    //   fileId: file.data.id,
+    //   requestBody: {
+    //     role: "writer",
+    //     type: "user",
+    //     emailAddress: "soyesnjy@gmail.com",
+    //   },
+    //   // transferOwnership: true, // role:'owner' 일 경우
+    // });
 
     // Public URL을 가져오기 위해 파일 정보를 다시 가져옴
     const uploadFile = await drive.files.get({
