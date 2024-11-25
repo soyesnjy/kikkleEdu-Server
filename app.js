@@ -16,7 +16,7 @@ const PORT = 6001;
 const PORT_https = 6060;
 
 // 서버와 동일한 url을 브라우저에 입력하면 src 폴더 내부의 html 파일 실행.
-const path = require("path");
+// const path = require("path");
 // app.use(express.static(path.join(__dirname, "src")));
 
 // cors에러 처리. default는 모든 origin에 대해 허용 -> { origin:'*' } 파라미터 생략 가능.
@@ -111,6 +111,29 @@ app.use(
     },
   })
 );
+
+// API 호출 로그 기록
+const morgan = require("morgan");
+
+// Morgan 커스텀 토큰 정의
+morgan.token("req-body", (req) => {
+  return req.body && Object.keys(req.body).length > 0
+    ? JSON.stringify(req.body)
+    : "-"; // Body가 없으면 "-" 반환
+});
+// app.use(morgan(":method :url :status :response-time ms - Req Body: :req-body"));
+// GET 요청을 제외한 조건부 로깅 미들웨어
+app.use((req, res, next) => {
+  if (req.method !== "GET") {
+    morgan(":method :url :status :response-time ms - Req Body: :req-body")(
+      req,
+      res,
+      next
+    );
+  } else {
+    next(); // GET 요청은 morgan 실행 없이 다음 미들웨어로 이동
+  }
+});
 
 app.get("/kikle", (req, res) => {
   // jenkins 배포 테스트용 주석5

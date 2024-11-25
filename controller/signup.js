@@ -651,7 +651,7 @@ const signupController = {
   },
   // KK 회원가입 DELETE
   deleteReviewDataDelete: (req, res) => {
-    console.log("KK 회원 DELETE API 호출");
+    // console.log("KK 회원 DELETE API 호출");
     // console.log(req.query);
     const refreshToken = req.cookies.refreshToken;
     const { userClass, userIdx } = req.query;

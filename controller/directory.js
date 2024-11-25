@@ -267,7 +267,7 @@ const directoryController = {
   },
   // Directory CREATE
   postDirectoryDataCreate: async (req, res) => {
-    console.log("KK Directory CREATE API 호출");
+    // console.log("KK Directory CREATE API 호출");
     let parseData;
     try {
       const { data } = req.body;
@@ -355,7 +355,7 @@ const directoryController = {
   },
   // Video File CREATE
   postDirectoryVideoFileDataCreate: async (req, res) => {
-    console.log("KK Video File CREATE API 호출");
+    // console.log("KK Video File CREATE API 호출");
     const file = req.file;
     const { form, directoryId, fileName } = req.body;
     try {
@@ -414,7 +414,7 @@ const directoryController = {
   },
   // Video File CREATE V2
   postDirectoryVideoFileDataCreateV2: async (req, res) => {
-    console.log("KK Video File CREATE V2 API 호출");
+    // console.log("KK Video File CREATE V2 API 호출");
     let parseData;
     try {
       const { data } = req.body;
@@ -468,7 +468,7 @@ const directoryController = {
   },
   // TODO# Directory UPDATE
   postDirectoryDataUpdate: (req, res) => {
-    console.log("ReviewData UPDATE API 호출");
+    // console.log("ReviewData UPDATE API 호출");
     const { ReviewData } = req.body;
     let parseReviewData, parseEnteyID, parseContent;
     try {
@@ -482,11 +482,11 @@ const directoryController = {
       parseContent = content;
 
       // 오늘 날짜 변환
-      const dateObj = new Date();
-      const year = dateObj.getFullYear();
-      const month = ("0" + (dateObj.getMonth() + 1)).slice(-2);
-      const day = ("0" + dateObj.getDate()).slice(-2);
-      const date = `${year}-${month}-${day}`;
+      // const dateObj = new Date();
+      // const year = dateObj.getFullYear();
+      // const month = ("0" + (dateObj.getMonth() + 1)).slice(-2);
+      // const day = ("0" + dateObj.getDate()).slice(-2);
+      // const date = `${year}-${month}-${day}`;
 
       // Review 테이블 및 속성 명시
       const review_table = Review_Table_Info.table;
@@ -538,7 +538,7 @@ const directoryController = {
   },
   // Directory DELETE
   deleteDirectoryDataDelete: async (req, res) => {
-    console.log("KK Directory DELETE API 호출");
+    // console.log("KK Directory DELETE API 호출");
     const { directoryIdx, type, form } = req.query;
     try {
       // Drive Data Delete
@@ -579,7 +579,7 @@ const directoryController = {
         }
         // await drive.files.delete({ fileId: file.id });
 
-        console.log("Directory DB Delete Success!");
+        // console.log("Directory DB Delete Success!");
         return res
           .status(200)
           .json({ message: "Directory DB Delete Success!" });

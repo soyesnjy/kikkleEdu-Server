@@ -127,7 +127,7 @@ const classController = {
   },
   // KKClass Data CREATE
   postKKClassDataCreate: async (req, res) => {
-    console.log("KKClass Data CREATE API 호출");
+    // console.log("KKClass Data CREATE API 호출");
     const { data } = req.body;
     let parseData, parsepUid;
     try {

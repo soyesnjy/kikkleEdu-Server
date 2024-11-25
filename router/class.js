@@ -7,14 +7,14 @@ const { classController } = require("../controller/class");
 const {
   getKKClassDataRead,
   postKKClassDataCreate,
-  postKKClassDataUpdate,
-  deleteKKClassDataDelete,
+  // postKKClassDataUpdate,
+  // deleteKKClassDataDelete,
 } = classController;
 
 router.get("/", getKKClassDataRead);
 router.post("/create", postKKClassDataCreate);
-router.post("/update", postKKClassDataUpdate);
-router.delete("/:id", deleteKKClassDataDelete);
+// router.post("/update", postKKClassDataUpdate);
+// router.delete("/:id", deleteKKClassDataDelete);
 
 // 에러 메세지 처리
 router.use(errController.errMessageHandler);

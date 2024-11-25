@@ -531,7 +531,7 @@ const loginController_KK = {
   },
   // 로그아웃 - 인증 삭제
   getKKLogoutHandler: async (req, res) => {
-    console.log("KK Logout API 호출");
+    // console.log("KK Logout API 호출");
     // console.log(req.cookies);
     const refreshToken = req.cookies.refreshToken;
     try {
