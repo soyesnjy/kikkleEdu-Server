@@ -394,7 +394,7 @@ const loginController_KK = {
     try {
       // 입력값 파싱
       if (typeof data === "string") {
-        parseLoginData = JSON.parse(LoginData);
+        parseLoginData = JSON.parse(data);
       } else parseLoginData = data;
 
       const { pUid, passWord, type } = parseLoginData;
