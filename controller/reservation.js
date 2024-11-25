@@ -201,7 +201,7 @@ ORDER BY
                   console.log(error);
                   res.status(400).json({ message: error.sqlMessage });
                 } else {
-                  console.log("Reservation Row DB INSERT Success!");
+                  // console.log("Reservation Row DB INSERT Success!");
                   res.status(200).json({
                     message: "Reservation Row DB INSERT Success! - 200 OK",
                   });
@@ -232,6 +232,7 @@ ORDER BY
         reservationIdx,
         dateArr,
         teacherIdx,
+        attendTrigger, // 첫 강사 매칭 트리거
         approveStatus, // 승인 상태 공통
       } = parseSignUpData;
 
@@ -249,15 +250,14 @@ ORDER BY
         ];
       }
 
-      // const reservation_table = KK_User_Table_Info["reservation"].table;
+      const reservation_table = KK_User_Table_Info["reservation"].table;
       // const reservation_attribute = KK_User_Table_Info["reservation"].attribute;
 
       const update_query = `UPDATE
-      kk_reservation SET kk_teacher_idx = ?,
+      ${reservation_table} SET kk_teacher_idx = ?,
       ${dateArr ? "kk_reservation_date = ?," : ""}
       kk_reservation_approve_status = ?
       WHERE kk_reservation_idx = ?`;
-      // console.log(update_query);
 
       const update_value_obj = {
         attr3: teacherIdx,
@@ -268,69 +268,41 @@ ORDER BY
         pKey: reservationIdx,
       };
 
-      // console.log(update_value_obj);
+      try {
+        // 예약 Table 수정
+        await queryAsync(
+          connection_KK,
+          update_query,
+          Object.values(update_value_obj)
+        );
 
-      // reservationIdx에 연결된 attend row select
-      // const select_query = `SELECT * FROM kk_attend WHERE kk_reservation_idx = ${reservationIdx}`;
-      // const select_attend_data = await fetchUserData(
-      //   connection_KK,
-      //   select_query
-      // );
+        // 날짜 수정인 경우 => attend Talbe 삭제 후 수정
+        if (attendTrigger || dateArr) {
+          // 출석 테이블 기존 날짜 삭제 (Delete kk_attend)
+          const delete_query = `DELETE FROM kk_attend WHERE kk_reservation_idx = ${reservationIdx};`;
+          await queryAsync(connection_KK, delete_query, null);
 
-      // console.log(select_attend_data);
-
-      connection_KK.query(
-        update_query,
-        Object.values(update_value_obj),
-        (error, rows, fields) => {
-          if (error) {
-            console.log(error);
-            res.status(400).json({ message: error.sqlMessage });
-          }
-          // 날짜 수정인 경우
-          else if (dateArr) {
-            // 출석 테이블 기존 날짜 삭제 (Delete kk_attend)
-            const delete_query = `DELETE FROM kk_attend WHERE kk_reservation_idx = ${reservationIdx};`;
-            connection_KK.query(delete_query, null, (err) => {
-              // 기존 날짜 삭제 실패
-              if (error) {
-                console.log(`Attend Table Row Delete Fail! - reservationIdx:${reservationIdx}
-                    error: ${error}`);
-                return res.status(400).json({ message: error.sqlMessage });
-              } else {
-                // 갱신된 날짜 삽입 (Insert kk_attend)
-                const insert_query = `INSERT INTO kk_attend (kk_reservation_idx, kk_attend_date, kk_attend_status) VALUES ${sortedReservationDate
-                  .map((el) => {
-                    return `(${reservationIdx}, '${el}', 0)`;
-                  })
-                  .join(", ")}`;
-
-                // console.log(insert_query);
-
-                connection_KK.query(insert_query, null, (err) => {
-                  if (error) {
-                    console.log(error);
-                    res.status(400).json({ message: error.sqlMessage });
-                  } else {
-                    console.log("Reservation Update && Attend Insert Success!");
-                    res.status(200).json({
-                      message:
-                        "Reservation Update && Attend Insert Success! - 200 OK",
-                    });
-                  }
-                });
-              }
-            });
-          }
-          // 그 외
-          else {
-            console.log("Reservation Row DB INSERT Success!");
-            res.status(200).json({
-              message: "Reservation Update Success! - 200 OK",
-            });
-          }
+          // 갱신된 날짜 삽입 (Insert kk_attend)
+          const insert_query = `INSERT INTO kk_attend
+          (kk_reservation_idx, kk_attend_date, kk_attend_status) 
+          VALUES ${sortedReservationDate
+            .map((el) => {
+              return `(${reservationIdx}, '${el}', 0)`;
+            })
+            .join(", ")}`;
+          await queryAsync(connection_KK, insert_query, null);
         }
-      );
+      } catch (err) {
+        console.error("Error executing query:", err);
+        return res.status(500).json({
+          message: `Server Error: ${err.sqlMessage}`,
+        });
+      }
+
+      // Table 수정 종료
+      return res.status(200).json({
+        message: "Reservation Update Success! - 200 OK",
+      });
     } catch (err) {
       console.error(err);
       res.status(500).json({ message: "Server Error - 500 Bad Gateway" });
@@ -338,7 +310,7 @@ ORDER BY
   },
   // KK Reservation Data DELETE
   deleteKKReservationDataDelete: (req, res) => {
-    console.log("Reservation Data DELETE API 호출");
+    // console.log("Reservation Data DELETE API 호출");
     const { reservationIdx } = req.query;
     try {
       const delete_query = `DELETE FROM kk_reservation WHERE kk_reservation_idx = ?`;
@@ -348,7 +320,7 @@ ORDER BY
           console.log(err);
           res.json({ message: err.sqlMessage });
         } else {
-          console.log("Reservation DB Delete Success!");
+          // console.log("Reservation DB Delete Success!");
           res.status(200).json({ message: "Reservation DB Delete Success!" });
         }
       });
