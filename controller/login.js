@@ -78,6 +78,7 @@ const {
   Plan_Table_Info,
   KK_User_Table_Info,
 } = require("../DB/database_table_info");
+const { domains } = require("googleapis/build/src/apis/domains");
 
 // 동기식 DB 접근 함수 1. Promise 생성 함수
 function queryAsync(connection, query, parameters) {
@@ -879,6 +880,10 @@ const loginController_KK = {
 
     try {
       const authHeader = req.headers["authorization"];
+      if (!authHeader) {
+        console.log(`미권한 회원 접근`);
+        return;
+      }
       const refreshToken = authHeader && authHeader?.split(" ")[1]; // split 하는 이유: 'Barer [TokenValue]' 형식으로 전달받기 때문
 
       // accessToken이 있는 경우 - accessToken은 세션에 저장된 값이기 때문에 비교적 간단한 검사 진행

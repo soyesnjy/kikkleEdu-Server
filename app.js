@@ -32,6 +32,7 @@ app.use(
       "http://localhost:3001",
       "https://www.kikle.kr",
       "https://kikle.kr",
+      "https://soyeskids.shop",
       // "http://127.0.0.1:53298",
       // "http://d1rq5xi9hzhyrc.cloudfront.net",
       // "http://soyes.chatbot.s3-website.ap-northeast-2.amazonaws.com",
