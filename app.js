@@ -174,16 +174,6 @@ app.use("/kikle/mypage", MypageRouter);
 const BoardRouter = require("./router/board");
 app.use("/kikle/board", BoardRouter);
 
-// MailTest 경로 라우팅
-// const mailTestRouter = require("./router/mailTest");
-// app.use("/mailtest", mailTestRouter);
-
-// 에러 처리는 일반적인 미들웨어 함수와 동일하게 적용 가능하다.
-// const { errController } = require("./controller/index");
-// app.use(errController.logErrors);
-// app.use(errController.clientErrorHandler);
-// app.use(errController.univErrorHandler);
-
 console.log("Kikkle 서버 Start~!");
 // https 보안 파일이 있을 경우
 if (
