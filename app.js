@@ -157,17 +157,6 @@ app.use("/kikle/signup", signupRouter);
 const directoryRouter = require("./router/directory");
 app.use("/kikle/directory", directoryRouter);
 
-// AI
-// openAI 경로 라우팅
-// const openAIRouter = require("./router/openAI");
-// app.use("/openAI", openAIRouter);
-
-// const reviewRouter = require("./router/Legacy/SoyesAI/review");
-// app.use("/review", reviewRouter);
-
-// const kakaoPayRouter = require("./router/kakaoPay");
-// app.use("/kakaopay", kakaoPayRouter);
-
 // Kikle Edu
 // 수업 관련 Router
 const ClassRouter = require("./router/class");
@@ -181,6 +170,7 @@ app.use("/kikle/reservation", ReservationRouter);
 // 마이페이지 관련 Router
 const MypageRouter = require("./router/mypage");
 app.use("/kikle/mypage", MypageRouter);
+// 게시판페이지 관련 Router
 const BoardRouter = require("./router/board");
 app.use("/kikle/board", BoardRouter);
 

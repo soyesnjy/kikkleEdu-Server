@@ -38,15 +38,15 @@ router.post("/kk", postKKLoginHandler);
 // KK 일반 로그아웃
 router.get("/kk/logout", getKKLogoutHandler);
 
-// Google OAuth_url 발급
-router.get("/oauth_url", getKKoauthUrlHandler);
-// Google OAuth AccessToken 발급
-router.post("/oauth_token/google", postKKoauthGoogleAccessTokenHandler);
+// // Google OAuth_url 발급
+// router.get("/oauth_url", getKKoauthUrlHandler);
+// // Google OAuth AccessToken 발급
+// router.post("/oauth_token/google", postKKoauthGoogleAccessTokenHandler);
 
-// Kakao OAuth_url 발급
-router.get("/oauth_url/kakao", getKKoauthKakaoUrlHandler);
-// Kakao OAuth AccessToken 발급
-router.post("/oauth_token/kakao", postKKoauthKakaoAccessTokenHandler);
+// // Kakao OAuth_url 발급
+// router.get("/oauth_url/kakao", getKKoauthKakaoUrlHandler);
+// // Kakao OAuth AccessToken 발급
+// router.post("/oauth_token/kakao", postKKoauthKakaoAccessTokenHandler);
 
 // 에러 메세지 처리
 router.use(errController.errMessageHandler);

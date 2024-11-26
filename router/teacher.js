@@ -9,7 +9,7 @@ const { getKKTeacherDataRead } = teacherController;
 const { vaildateKKTokenCheck } = loginController_KK;
 
 router.get(
-  "/",
+  "/read",
   // 조건부 토큰 체크
   (req, res, next) => {
     const query = req.query;

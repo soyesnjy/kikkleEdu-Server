@@ -16,7 +16,7 @@ const {
 
 const { vaildateKKTokenCheck } = loginController_KK;
 
-router.get("/", vaildateKKTokenCheck, getDirectoryDataRead);
+router.get("/read", vaildateKKTokenCheck, getDirectoryDataRead);
 router.post("/create", vaildateKKTokenCheck, postDirectoryDataCreate);
 router.post(
   "/create/video",

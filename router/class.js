@@ -11,7 +11,7 @@ const {
   // deleteKKClassDataDelete,
 } = classController;
 
-router.get("/", getKKClassDataRead);
+router.get("/read", getKKClassDataRead);
 router.post("/create", postKKClassDataCreate);
 // router.post("/update", postKKClassDataUpdate);
 // router.delete("/:id", deleteKKClassDataDelete);
