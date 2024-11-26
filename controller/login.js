@@ -885,7 +885,7 @@ const loginController_KK = {
         return;
       }
       const refreshToken = authHeader && authHeader?.split(" ")[1]; // split 하는 이유: 'Barer [TokenValue]' 형식으로 전달받기 때문
-
+      console.log(`refreshToken: ${refreshToken}`);
       // accessToken이 있는 경우 - accessToken은 세션에 저장된 값이기 때문에 비교적 간단한 검사 진행
       // if (accessToken) {
       //   // accessToken Decoding
