@@ -487,7 +487,7 @@ const loginController_KK = {
           httpOnly: true,
           sameSite: process.env.DEV_OPS === "local" ? "strict" : "none",
           secure: process.env.DEV_OPS !== "local",
-          domain: process.env.DEV_OPS === "local" ? "" : "kikle.kr",
+          // domain: process.env.DEV_OPS === "local" ? "" : "kikle.kr",
         });
 
         // Redis에서 기존 세션 ID 확인
@@ -872,6 +872,7 @@ const loginController_KK = {
     // const accessToken = req.session.accessToken;
     // const sessionId = req.sessionID;
     const cookie_refreshToken = req.cookies.refreshToken; // Request Cookie - refreshToken => 스토어 배포 어플에 Cookie 적용이 안됨
+    console.log(cookie_refreshToken);
 
     // 미로그인 회원 접근
     if (!req) {
