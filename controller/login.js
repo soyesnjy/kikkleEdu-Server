@@ -399,7 +399,7 @@ const loginController_KK = {
       } else parseLoginData = data;
 
       const { pUid, passWord, type } = parseLoginData;
-      const sessionId = req.sessionID;
+      // const sessionId = req.sessionID;
 
       // type 없을 경우
       if (!type) {
@@ -487,6 +487,7 @@ const loginController_KK = {
           httpOnly: true,
           sameSite: process.env.DEV_OPS === "local" ? "strict" : "none",
           secure: process.env.DEV_OPS !== "local",
+          domain: process.env.DEV_OPS === "local" ? "" : "kikle.kr",
         });
 
         // Redis에서 기존 세션 ID 확인
@@ -867,10 +868,10 @@ const loginController_KK = {
   // (Middle Ware) KK JWT 토큰 유효성 검사
   vaildateKKTokenCheck: async (req, res, next) => {
     // const { userClass, userIdx } = req.query; // Request Query - userClass, userIdx
-    // const refreshToken = req.cookies.refreshToken; // Request Cookie - refreshToken => 스토어 배포 어플에 Cookie 적용이 안됨
     // authorization 헤더 체크
     // const accessToken = req.session.accessToken;
     // const sessionId = req.sessionID;
+    const cookie_refreshToken = req.cookies.refreshToken; // Request Cookie - refreshToken => 스토어 배포 어플에 Cookie 적용이 안됨
 
     // 미로그인 회원 접근
     if (!req) {
@@ -878,14 +879,22 @@ const loginController_KK = {
       return;
     }
 
+    const authHeader = req.headers["authorization"];
+
     try {
-      const authHeader = req.headers["authorization"];
       if (!authHeader) {
-        console.log(`미권한 회원 접근`);
-        return;
+        if (!cookie_refreshToken) {
+          console.log(`미권한 회원 접근`);
+          return res.status(401).json({
+            message: "미로그인 회원 접근",
+          });
+        }
       }
-      const refreshToken = authHeader && authHeader?.split(" ")[1]; // split 하는 이유: 'Barer [TokenValue]' 형식으로 전달받기 때문
-      console.log(`refreshToken: ${refreshToken}`);
+      const refreshToken = authHeader
+        ? authHeader?.split(" ")[1]
+        : cookie_refreshToken; // split 하는 이유: 'Barer [TokenValue]' 형식으로 전달받기 때문
+
+      // console.log(`refreshToken: ${refreshToken}`);
       // accessToken이 있는 경우 - accessToken은 세션에 저장된 값이기 때문에 비교적 간단한 검사 진행
       // if (accessToken) {
       //   // accessToken Decoding
