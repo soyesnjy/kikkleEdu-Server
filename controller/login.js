@@ -872,7 +872,7 @@ const loginController_KK = {
     // const accessToken = req.session.accessToken;
     // const sessionId = req.sessionID;
     const cookie_refreshToken = req.cookies.refreshToken; // Request Cookie - refreshToken => 스토어 배포 어플에 Cookie 적용이 안됨
-    console.log(cookie_refreshToken);
+    // console.log(cookie_refreshToken);
 
     // 미로그인 회원 접근
     if (!req) {
@@ -891,9 +891,9 @@ const loginController_KK = {
           });
         }
       }
-      const refreshToken = authHeader
-        ? authHeader?.split(" ")[1]
-        : cookie_refreshToken; // split 하는 이유: 'Barer [TokenValue]' 형식으로 전달받기 때문
+      const refreshToken = cookie_refreshToken
+        ? cookie_refreshToken
+        : authHeader?.split(" ")[1]; // split 하는 이유: 'Barer [TokenValue]' 형식으로 전달받기 때문
 
       // console.log(`refreshToken: ${refreshToken}`);
       // accessToken이 있는 경우 - accessToken은 세션에 저장된 값이기 때문에 비교적 간단한 검사 진행
