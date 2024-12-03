@@ -535,32 +535,32 @@ const loginController_KK = {
   getKKLogoutHandler: async (req, res) => {
     // console.log("KK Logout API 호출");
     // console.log(req.cookies);
-    const refreshToken = req.cookies.refreshToken;
+    // const refreshToken = req.cookies.refreshToken;
     try {
       // refreshToken 있을 경우 - Redis Sid 삭제
       // refreshToken이 없는 상태에선 반드시 로그인을 해야함.
       // 로그인 시 자동으로 Redis SessionID는 갱신되므로 refreshToken이 있는 경우에만 Redis SessionID를 삭제한다.
-      if (refreshToken) {
-        const decoded = verifyToken("refresh", refreshToken);
-        // Redis SessionID 삭제
-        redisStore.get(`user_session:${decoded.id}`, (err, oldSessionId) => {
-          if (err) {
-            console.error("Error fetching old session ID:", err);
-            return; // 에러 발생 시 추가 처리 중지
-          }
-          if (oldSessionId) {
-            console.log("oldSessionId Destroy");
-            // 기존 세션 무효화
-            redisStore.destroy(`user_session:${decoded.id}`, (err) => {
-              if (err) {
-                console.error(err);
-                return;
-              }
-              console.log("RedisStore Session ID Delete Success!");
-            });
-          }
-        });
-      }
+      // if (refreshToken) {
+      //   const decoded = verifyToken("refresh", refreshToken);
+      //   // Redis SessionID 삭제
+      //   redisStore.get(`user_session:${decoded.id}`, (err, oldSessionId) => {
+      //     if (err) {
+      //       console.error("Error fetching old session ID:", err);
+      //       return; // 에러 발생 시 추가 처리 중지
+      //     }
+      //     if (oldSessionId) {
+      //       console.log("oldSessionId Destroy");
+      //       // 기존 세션 무효화
+      //       redisStore.destroy(`user_session:${decoded.id}`, (err) => {
+      //         if (err) {
+      //           console.error(err);
+      //           return;
+      //         }
+      //         console.log("RedisStore Session ID Delete Success!");
+      //       });
+      //     }
+      //   });
+      // }
 
       // 세션 삭제
       req.session.destroy((err) => {

@@ -13,15 +13,19 @@ const {
 
 const { vaildateKKTokenCheck } = loginController_KK;
 
-router.get("/teacher/read", vaildateKKTokenCheck, getKKTeacherAttendDataRead);
+router.get(
+  "/teacher/attend/read",
+  vaildateKKTokenCheck,
+  getKKTeacherAttendDataRead
+);
 router.post(
-  "/teacher/update",
+  "/teacher/attend/update",
   vaildateKKTokenCheck,
   postKKTeacherAttendDataUpdate
 );
 
 router.get(
-  "/agency/read",
+  "/agency/reservation/read",
   vaildateKKTokenCheck,
   getKKAgencyReservationDataRead
 );

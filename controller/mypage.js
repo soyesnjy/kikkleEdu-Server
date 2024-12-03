@@ -97,7 +97,7 @@ const mypageController = {
         if (err) {
           console.log(err);
           return res.status(400).json({
-            message: "User SignUp Request READ Fail! - 400",
+            message: "Teacher Attend Data READ Fail! - 400",
             page: -1,
             limit: -1,
             lastPageNum: -1,
@@ -110,7 +110,7 @@ const mypageController = {
         // console.log(total_count);
         // 결과 반환
         return res.status(200).json({
-          message: "User SignUp Request READ Success! - 200",
+          message: "Teacher Attend Data READ Success! - 200",
           page,
           limit,
           lastPageNum,
@@ -124,7 +124,7 @@ const mypageController = {
   },
   // KK Teacher Attend Data Update
   postKKTeacherAttendDataUpdate: (req, res) => {
-    console.log("Teacher Attend Data Update API 호출");
+    // console.log("Teacher Attend Data Update API 호출");
     const { AttendData } = req.body;
     // console.log(AttendData);
     let parseData;
@@ -155,7 +155,7 @@ const mypageController = {
         }
         // 결과 반환
         return res.status(200).json({
-          message: "Attend Update Success! - 200 OK",
+          message: "Teacher Attend Update Success! - 200 OK",
         });
       });
     } catch (err) {
@@ -203,7 +203,7 @@ ORDER BY r.kk_reservation_created_at DESC LIMIT ? OFFSET ?;
         if (err) {
           console.log(err);
           return res.status(400).json({
-            message: "User SignUp Request READ Fail! - 400",
+            message: "Agency Reservation Data READ Fail! - 400",
             page: -1,
             limit: -1,
             lastPageNum: -1,
@@ -215,7 +215,7 @@ ORDER BY r.kk_reservation_created_at DESC LIMIT ? OFFSET ?;
         // console.log(total_count);
         // 결과 반환
         return res.status(200).json({
-          message: "User SignUp Request READ Success! - 200",
+          message: "Agency Reservation Data READ Success! - 200",
           page,
           limit,
           lastPageNum,
