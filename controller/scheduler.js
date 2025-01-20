@@ -30,16 +30,14 @@ async function fetchUserData(connection, query) {
 }
 
 const SchedulerController = {
-  // #TODO: KK Schedule Data READ
+  // KK Schedule Data READ
   getKKSchedulerDataRead: async (req, res) => {
     try {
       const query = req.query;
       const { monthQuery, searchQuery } = query;
-      console.log(query);
+      // console.log(query);
 
-      let select_query;
-
-      select_query = `
+      const select_query = `
       SELECT
       kk_scheduler_idx AS id,
       kk_scheduler_title AS title,
@@ -163,12 +161,15 @@ const SchedulerController = {
         );
       }
     } catch (err) {
+      delete err.headers;
       console.error(err);
-      res.status(500).json({ message: "Server Error - 500 Bad Gateway" });
+      return res.status(500).json({
+        message: `Server Error : ${err.message}`,
+      });
     }
   },
-  // #TODO: KK Schedule Data UPDATE
-  postKKSchedulerDataUpdate: async (req, res) => {
+  // KK Schedule Data Drag UPDATE
+  postKKSchedulerDataDragUpdate: async (req, res) => {
     const { data } = req.body;
     // console.log(data);
     let parseData;
@@ -179,38 +180,27 @@ const SchedulerController = {
         parseData = JSON.parse(data);
       } else parseData = data;
 
-      const { boardIdx, title, content } = parseData;
+      const { id, start, end } = parseData;
 
       // 필수 Input 없을 경우
-      if (!boardIdx || !title || !content) {
+      if (!id || !start || !end) {
         console.log("Non Input Value - 400");
         return res.status(400).json({ message: "Non Input Value - 400" });
       }
 
-      // 게시글 DB update
+      // Update SQL Query
+      const update_query = `UPDATE kk_scheduler SET
+      kk_scheduler_start = ?,
+      kk_scheduler_end = ?
+      WHERE kk_scheduler_idx = ?`;
 
-      // update Board
-      const update_query = `UPDATE kk_board SET
-      kk_board_title = ?,
-      kk_board_content = ?
-      WHERE kk_board_idx = ?`;
-
-      // update Value 명시
-      const update_value_obj = {
-        attr3: title, // 강사 idx. 관리자 페이지에서 update
-        attr4: content,
-        pKey: boardIdx,
-      };
+      // Update Value 명시
+      const update_value = [start, end, id];
 
       try {
-        await queryAsync(
-          connection_KK,
-          update_query,
-          Object.values(update_value_obj)
-        );
-        console.log(`Board Row DB UPDATE Success!`);
+        await queryAsync(connection_KK, update_query, update_value);
         return res.status(200).json({
-          message: "Board Row DB UPDATE Success! - 200 OK",
+          message: "Scheduler Row DB UPDATE Success! - 200 OK",
         });
       } catch (err) {
         console.error("Error executing query:", err);
@@ -218,26 +208,87 @@ const SchedulerController = {
           message: `Server Error: ${err.sqlMessage}`,
         });
       }
-
-      // 게시글 생성
-      // connection_KK.query(
-      //   update_query,
-      //   Object.values(update_value_obj),
-      //   (error, rows, fields) => {
-      //     if (error) {
-      //       console.log(error);
-      //       res.status(400).json({ message: error.sqlMessage });
-      //     } else {
-      //       console.log("Board Row DB INSERT Success!");
-      //       res.status(200).json({
-      //         message: "Board Row DB INSERT Success! - 200 OK",
-      //       });
-      //     }
-      //   }
-      // );
     } catch (err) {
+      delete err.headers;
       console.error(err);
-      res.status(500).json({ message: "Server Error - 500 Bad Gateway" });
+      return res.status(500).json({
+        message: `Server Error : ${err.message}`,
+      });
+    }
+  },
+  // KK Schedule Data Click UPDATE
+  postKKSchedulerDataClickUpdate: async (req, res) => {
+    const { data } = req.body;
+    console.log(data);
+    let parseData;
+
+    try {
+      // 입력값 파싱
+      if (typeof data === "string") {
+        parseData = JSON.parse(data);
+      } else parseData = data;
+
+      const { id, title, end, extendedProps, backgroundColor } = parseData;
+
+      // 필수 Input 없을 경우
+      if (!id || !title || !end || !extendedProps || !backgroundColor) {
+        console.log("Non Input Value - 400");
+        return res.status(400).json({ message: "Non Input Value - 400" });
+      }
+
+      const {
+        teacherName,
+        courseName,
+        participants,
+        times,
+        courseTimes,
+        notes,
+      } = extendedProps;
+
+      // Update SQL Query
+      const update_query = `UPDATE kk_scheduler SET
+      kk_scheduler_title = ?,
+      kk_scheduler_end = ?,
+      kk_scheduler_backgroundColor = ?,
+      kk_scheduler_teacher = ?,
+      kk_scheduler_courseName = ?,
+      kk_scheduler_participants = ?,
+      kk_scheduler_times = ?,
+      kk_scheduler_courseTimes = ?,
+      kk_scheduler_notes = ?
+      WHERE kk_scheduler_idx = ?`;
+
+      // Update Value
+      const update_value = [
+        title,
+        end,
+        backgroundColor,
+        teacherName,
+        courseName,
+        participants,
+        times,
+        courseTimes,
+        notes,
+        id,
+      ];
+
+      try {
+        await queryAsync(connection_KK, update_query, update_value);
+        return res.status(200).json({
+          message: "Scheduler Row DB UPDATE Success! - 200 OK",
+        });
+      } catch (err) {
+        console.error("Error executing query:", err);
+        return res.status(500).json({
+          message: `Server Error: ${err.sqlMessage}`,
+        });
+      }
+    } catch (err) {
+      delete err.headers;
+      console.error(err);
+      return res.status(500).json({
+        message: `Server Error : ${err.message}`,
+      });
     }
   },
   // #TODO: KK Schedule Data DELETE
@@ -257,8 +308,11 @@ const SchedulerController = {
         }
       });
     } catch (err) {
-      console.log(err);
-      res.status(500).json({ message: "Server Error - 500" });
+      delete err.headers;
+      console.error(err);
+      return res.status(500).json({
+        message: `Server Error : ${err.message}`,
+      });
     }
   },
 };

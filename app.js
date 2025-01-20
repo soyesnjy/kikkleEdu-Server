@@ -38,7 +38,7 @@ app.use(
       // "http://soyes.chatbot.s3-website.ap-northeast-2.amazonaws.com",
       // "http://soyes.toy.com.s3-website.ap-northeast-2.amazonaws.com",
     ],
-    methods: ["GET", "POST", "OPTION", "DELETE"],
+    methods: ["GET", "POST", "OPTION", "PATCH", "DELETE"],
     credentials: true,
   })
 );

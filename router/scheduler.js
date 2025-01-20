@@ -7,13 +7,15 @@ const { SchedulerController } = require("../controller/scheduler");
 const {
   getKKSchedulerDataRead,
   postKKSchedulerDataCreate,
-  postKKSchedulerDataUpdate,
+  postKKSchedulerDataDragUpdate,
+  postKKSchedulerDataClickUpdate,
   deleteKKSchedulerDataDelete,
 } = SchedulerController;
 
 router.get("/read", getKKSchedulerDataRead);
 router.post("/create", postKKSchedulerDataCreate);
-router.post("/update", postKKSchedulerDataUpdate);
+router.patch("/update/drag", postKKSchedulerDataDragUpdate); // Drag Update Routing
+router.patch("/update/click", postKKSchedulerDataClickUpdate); // Click Update Routing
 router.delete("/:id", deleteKKSchedulerDataDelete);
 
 // 에러 메세지 처리
