@@ -78,7 +78,7 @@ const {
   Plan_Table_Info,
   KK_User_Table_Info,
 } = require("../DB/database_table_info");
-const { domains } = require("googleapis/build/src/apis/domains");
+// const { domains } = require("googleapis/build/src/apis/domains");
 
 // 동기식 DB 접근 함수 1. Promise 생성 함수
 function queryAsync(connection, query, parameters) {

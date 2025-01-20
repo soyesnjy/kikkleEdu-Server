@@ -38,78 +38,77 @@ const teacherController = {
       const teacher_class_table = KK_User_Table_Info["teacher_class"].table;
       const class_table = KK_User_Table_Info["class"].table;
 
-      const select_query = `
-  SELECT
-  ${!teacherIdx ? "DISTINCT" : ""}
-  ${
-    teacherIdx
-      ? `t.kk_teacher_idx,
-      t.kk_teacher_name,
-      t.kk_teacher_profileImg_path,
-      t.kk_teacher_phoneNum,
-      t.kk_teacher_introduction,
-      t.kk_teacher_education,
-      t.kk_teacher_history,
-      t.kk_teacher_location,
-      t.kk_teacher_dayofweek,
-      t.kk_teacher_time,
-      GROUP_CONCAT(
-        CONCAT(
-            c.kk_class_idx
-        ) SEPARATOR '/'
-    ) AS kk_teacher_class_idxs,
-      GROUP_CONCAT(
-        CONCAT(
-            c.kk_class_title
-        ) SEPARATOR ' / '
-    ) AS kk_teacher_class_titles`
-      : `t.kk_teacher_idx, t.kk_teacher_introduction, t.kk_teacher_name, t.kk_teacher_profileImg_path`
-  }
-  FROM ${teacher_table} AS t
-  ${
-    classIdx || classTag || teacherIdx || classType
-      ? `LEFT JOIN ${teacher_class_table} AS tc ON t.kk_teacher_idx = tc.kk_teacher_idx`
-      : ""
-  }
-  ${
-    classTag || teacherIdx || classType
-      ? `LEFT JOIN ${class_table} AS c ON c.kk_class_idx = tc.kk_class_idx`
-      : ""
-  }
-  WHERE t.kk_teacher_approve_status = '1'
-  ${
-    // 강사 희망 요일 체크
-    parseDayofweek
-      ? `AND (${parseDayofweek
-          .map((day) => `t.kk_teacher_dayofweek LIKE '%${day}%'`)
-          .join(" OR ")})`
-      : ""
-  }
-  ${
-    // 강사 희망 시간대 체크
-    partTime ? ` AND t.kk_teacher_time LIKE '%${partTime}%'` : ""
-  }
-  ${classIdx ? ` AND tc.kk_class_idx = ${classIdx}` : ""}
-  ${classTag ? ` AND c.kk_class_tag = '${classTag}'` : ""}
-  ${classType ? ` AND c.kk_class_type LIKE '%${classType}%'` : ""}
-  ${
-    // 특정 강사 정보 확인
-    teacherIdx
-      ? ` AND t.kk_teacher_idx = ${teacherIdx} GROUP BY t.kk_teacher_idx`
-      : ""
-  }
-  ${
-    // 메인페이지 OR 기관 페이지 랜덤, 그 외 생성순
-    main || classType
-      ? "ORDER BY RAND()"
-      : "ORDER BY t.kk_teacher_created_at DESC"
-  }
-  ${
-    // 메인페이지 5개, 기관 페이지 6개
-    main ? "LIMIT 5" : ""
-  }
-  ${classType ? "LIMIT 6" : ""};
-`;
+      const select_query = `SELECT
+      ${!teacherIdx ? "DISTINCT" : ""}
+      ${
+        teacherIdx
+          ? `t.kk_teacher_idx,
+          t.kk_teacher_name,
+          t.kk_teacher_profileImg_path,
+          t.kk_teacher_phoneNum,
+          t.kk_teacher_introduction,
+          t.kk_teacher_education,
+          t.kk_teacher_history,
+          t.kk_teacher_location,
+          t.kk_teacher_dayofweek,
+          t.kk_teacher_time,
+          GROUP_CONCAT(
+            CONCAT(
+                c.kk_class_idx
+            ) SEPARATOR '/'
+        ) AS kk_teacher_class_idxs,
+          GROUP_CONCAT(
+            CONCAT(
+                c.kk_class_title
+            ) SEPARATOR ' / '
+        ) AS kk_teacher_class_titles`
+          : `t.kk_teacher_idx, t.kk_teacher_introduction, t.kk_teacher_name, t.kk_teacher_profileImg_path`
+      }
+      FROM ${teacher_table} AS t
+      ${
+        classIdx || classTag || teacherIdx || classType
+          ? `LEFT JOIN ${teacher_class_table} AS tc ON t.kk_teacher_idx = tc.kk_teacher_idx`
+          : ""
+      }
+      ${
+        classTag || teacherIdx || classType
+          ? `LEFT JOIN ${class_table} AS c ON c.kk_class_idx = tc.kk_class_idx`
+          : ""
+      }
+      WHERE t.kk_teacher_approve_status = '1'
+      ${
+        // 강사 희망 요일 체크
+        parseDayofweek
+          ? `AND (${parseDayofweek
+              .map((day) => `t.kk_teacher_dayofweek LIKE '%${day}%'`)
+              .join(" OR ")})`
+          : ""
+      }
+      ${
+        // 강사 희망 시간대 체크
+        partTime ? ` AND t.kk_teacher_time LIKE '%${partTime}%'` : ""
+      }
+      ${classIdx ? ` AND tc.kk_class_idx = ${classIdx}` : ""}
+      ${classTag ? ` AND c.kk_class_tag = '${classTag}'` : ""}
+      ${classType ? ` AND c.kk_class_type LIKE '%${classType}%'` : ""}
+      ${
+        // 특정 강사 정보 확인
+        teacherIdx
+          ? ` AND t.kk_teacher_idx = ${teacherIdx} GROUP BY t.kk_teacher_idx`
+          : ""
+      }
+      ${
+        // 메인페이지 OR 기관 페이지 랜덤, 그 외 생성순
+        main || classType
+          ? "ORDER BY RAND()"
+          : "ORDER BY t.kk_teacher_created_at DESC"
+      }
+      ${
+        // 메인페이지 5개, 기관 페이지 6개
+        main ? "LIMIT 5" : ""
+      }
+      ${classType ? "LIMIT 6" : ""};
+    `;
 
       // console.log(select_query);
       // 데이터베이스 쿼리 실행

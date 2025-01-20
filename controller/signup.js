@@ -56,12 +56,12 @@ async function fetchUserData(connection, query) {
   }
 }
 
-const user_kk_select = async (user_table, user_attribute, parsepUid) => {
-  const select_query = `SELECT * FROM ${user_table} WHERE ${user_attribute.attr1}='${parsepUid}'`;
-  const select_data = await fetchUserData(connection_KK, select_query);
+// const user_kk_select = async (user_table, user_attribute, parsepUid) => {
+//   const select_query = `SELECT * FROM ${user_table} WHERE ${user_attribute.attr1}='${parsepUid}'`;
+//   const select_data = await fetchUserData(connection_KK, select_query);
 
-  return select_data;
-};
+//   return select_data;
+// };
 
 const fileDriveSave = async (fileData) => {
   try {
