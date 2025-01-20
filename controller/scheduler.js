@@ -219,7 +219,7 @@ const SchedulerController = {
   // KK Schedule Data Click UPDATE
   postKKSchedulerDataClickUpdate: async (req, res) => {
     const { data } = req.body;
-    console.log(data);
+    // console.log(data);
     let parseData;
 
     try {
