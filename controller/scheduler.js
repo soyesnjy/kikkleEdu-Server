@@ -96,7 +96,7 @@ const SchedulerController = {
   // KK Schedule Data CREATE
   postKKSchedulerDataCreate: async (req, res) => {
     const { data } = req.body;
-    console.log(data);
+    // console.log(data);
     let parseData;
 
     try {
@@ -126,7 +126,7 @@ const SchedulerController = {
       if (
         !teacherName ||
         !courseName ||
-        !participants ||
+        participants < 0 ||
         !times ||
         !courseTimes
       ) {
@@ -262,6 +262,18 @@ const SchedulerController = {
         courseTimes,
         notes,
       } = extendedProps;
+
+      // 필수 Input 없을 경우2
+      if (
+        !teacherName ||
+        !courseName ||
+        participants < 0 ||
+        !times ||
+        !courseTimes
+      ) {
+        console.log("Non Input Value - 400");
+        return res.status(400).json({ message: "Non Input Value - 400" });
+      }
 
       // Update SQL Query
       const update_query = `UPDATE kk_scheduler SET
