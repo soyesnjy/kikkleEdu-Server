@@ -53,7 +53,11 @@ const SchedulerController = {
         'notes',            kk_scheduler_notes
       ) AS extendedProps
       FROM kk_scheduler
-      WHERE MONTH(kk_scheduler_start) = ${monthQuery}
+      WHERE MONTH(kk_scheduler_start) IN (
+        CASE WHEN ${monthQuery} = 1  THEN 12 ELSE ${monthQuery} - 1 END,
+        ${monthQuery},
+        CASE WHEN ${monthQuery} = 12 THEN 1  ELSE ${monthQuery} + 1 END
+      )
       ${searchQuery ? `AND kk_scheduler_teacher LIKE '%${searchQuery}%'` : ""}
       `;
 
@@ -89,10 +93,10 @@ const SchedulerController = {
       });
     }
   },
-  // #TODO: KK Schedule Data CREATE
+  // KK Schedule Data CREATE
   postKKSchedulerDataCreate: async (req, res) => {
     const { data } = req.body;
-    // console.log(data);
+    console.log(data);
     let parseData;
 
     try {
@@ -101,65 +105,79 @@ const SchedulerController = {
         parseData = JSON.parse(data);
       } else parseData = data;
 
+      const { title, start, end, extendedProps, backgroundColor } = parseData;
+
+      // 필수 Input 없을 경우1
+      if (!title || !start || !end || !extendedProps || !backgroundColor) {
+        console.log("Non Input Value - 400");
+        return res.status(400).json({ message: "Non Input Value - 400" });
+      }
+
       const {
-        // 예약 데이터
-        agencyIdx, // default userIdx === dummy 계정
+        teacherName,
+        courseName,
+        participants,
+        times,
+        courseTimes,
+        notes,
+      } = extendedProps;
+
+      // 필수 Input 없을 경우2
+      if (
+        !teacherName ||
+        !courseName ||
+        !participants ||
+        !times ||
+        !courseTimes
+      ) {
+        console.log("Non Input Value - 400");
+        return res.status(400).json({ message: "Non Input Value - 400" });
+      }
+
+      // INSERT Board
+      const insert_query = `INSERT INTO kk_scheduler
+      (kk_scheduler_start,
+      kk_scheduler_end,
+      kk_scheduler_title,
+      kk_scheduler_teacher,
+      kk_scheduler_courseName,
+      kk_scheduler_participants,
+      kk_scheduler_times,
+      kk_scheduler_backgroundColor,
+      kk_scheduler_courseTimes,
+      kk_scheduler_notes) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+      // console.log(insert_query);
+
+      // INSERT Value 명시
+      const insert_value = [
+        start,
+        end, // 강사 idx. 관리자 페이지에서 update
         title,
-        content,
-        isPrivate,
-      } = parseData;
+        teacherName,
+        courseName,
+        participants,
+        times,
+        backgroundColor,
+        courseTimes,
+        notes,
+      ];
 
-      // Input 없을 경우
-      if (!agencyIdx || !title || !content) {
-        return res
-          .status(400)
-          .json({ message: "Non Input Value - 400 Bad Request" });
-      }
+      // console.log(insert_value_obj);
 
-      const select_query = `SELECT kk_agency_type FROM kk_agency WHERE kk_agency_idx='${agencyIdx}'`;
-      const select_data = await fetchUserData(connection_KK, select_query);
-
-      // 게시글 DB INSERT
-      if (true) {
-        // INSERT Board
-        const insert_query = `INSERT INTO kk_board
-        (kk_agency_idx, 
-        kk_board_type, 
-        kk_board_title, 
-        kk_board_content, 
-        kk_board_reply, 
-        kk_board_private) 
-        VALUES (?, ?, ?, ?, ?, ?)`;
-        // console.log(insert_query);
-
-        // INSERT Value 명시
-        const insert_value_obj = {
-          attr1: agencyIdx,
-          attr2: select_data[0].kk_agency_type === "admin" ? "notice" : "",
-          attr3: title, // 강사 idx. 관리자 페이지에서 update
-          attr4: content,
-          attr5: "",
-          attr6: isPrivate ? 1 : 0,
-        };
-        // console.log(insert_value_obj);
-
-        // 게시글 생성
-        connection_KK.query(
-          insert_query,
-          Object.values(insert_value_obj),
-          (error, rows, fields) => {
-            if (error) {
-              console.log(error);
-              res.status(400).json({ message: error.sqlMessage });
-            } else {
-              console.log("Board Row DB INSERT Success!");
-              res.status(200).json({
-                message: "Board Row DB INSERT Success! - 200 OK",
-              });
-            }
-          }
-        );
-      }
+      // 게시글 생성
+      connection_KK.query(insert_query, insert_value, (error, result) => {
+        if (error) {
+          console.log(error);
+          return res.status(400).json({ message: error.sqlMessage });
+        }
+        return res.status(200).json({
+          message: "Scheduler Row DB INSERT Success! - 200 OK",
+          data: {
+            id: result.insertId,
+          },
+        });
+      });
     } catch (err) {
       delete err.headers;
       console.error(err);
@@ -291,21 +309,20 @@ const SchedulerController = {
       });
     }
   },
-  // #TODO: KK Schedule Data DELETE
+  // KK Schedule Data DELETE
   deleteKKSchedulerDataDelete: (req, res) => {
-    console.log("Board Data DELETE API 호출");
-    const { boardIdx } = req.query;
+    const { eventId } = req.query;
     try {
-      const delete_query = `DELETE FROM kk_board WHERE kk_board_idx = ?`;
+      const delete_query = `DELETE FROM kk_scheduler WHERE kk_scheduler_idx = ?`;
 
-      connection_KK.query(delete_query, [boardIdx], (err) => {
+      connection_KK.query(delete_query, [eventId], (err) => {
         if (err) {
           console.log(err);
-          res.json({ message: err.sqlMessage });
-        } else {
-          console.log("Board DB Delete Success!");
-          res.status(200).json({ message: "Board DB Delete Success!" });
+          return res.json({ message: err.sqlMessage });
         }
+        return res
+          .status(200)
+          .json({ message: "Scheduler DB Delete Success!" });
       });
     } catch (err) {
       delete err.headers;
