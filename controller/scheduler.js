@@ -127,14 +127,14 @@ const SchedulerController = {
         !teacherName ||
         !courseName ||
         participants < 0 ||
-        !times ||
+        times < 0 ||
         !courseTimes
       ) {
         console.log("Non Input Value - 400");
         return res.status(400).json({ message: "Non Input Value - 400" });
       }
 
-      // INSERT Board
+      // INSERT Query
       const insert_query = `INSERT INTO kk_scheduler
       (kk_scheduler_start,
       kk_scheduler_end,
@@ -163,9 +163,8 @@ const SchedulerController = {
         notes,
       ];
 
-      // console.log(insert_value_obj);
+      // console.log(insert_value);
 
-      // 게시글 생성
       connection_KK.query(insert_query, insert_value, (error, result) => {
         if (error) {
           console.log(error);
@@ -268,7 +267,7 @@ const SchedulerController = {
         !teacherName ||
         !courseName ||
         participants < 0 ||
-        !times ||
+        times < 0 ||
         !courseTimes
       ) {
         console.log("Non Input Value - 400");
