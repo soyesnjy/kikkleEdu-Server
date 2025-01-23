@@ -106,8 +106,7 @@ const SchedulerController = {
         parseData = JSON.parse(data);
       } else parseData = data;
 
-      const { title, start, end, extendedProps, backgroundColor, groupIdx } =
-        parseData;
+      const { title, start, end, extendedProps, backgroundColor } = parseData;
 
       // 필수 Input 없을 경우1
       if (!title || !start || !end || !extendedProps || !backgroundColor) {
@@ -147,11 +146,8 @@ const SchedulerController = {
       kk_scheduler_times,
       kk_scheduler_backgroundColor,
       kk_scheduler_courseTimes,
-      ${groupIdx && groupIdx !== -1 ? `kk_scheduler_groupIdx,` : ""}
       kk_scheduler_notes)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?${
-        groupIdx && groupIdx !== -1 ? `,?` : ""
-      })`;
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
       // console.log(insert_query);
 
       // INSERT Value 명시
@@ -165,7 +161,6 @@ const SchedulerController = {
         times,
         backgroundColor,
         courseTimes,
-        ...(groupIdx !== -1 ? [groupIdx] : []),
         notes,
       ];
 
@@ -175,16 +170,6 @@ const SchedulerController = {
         if (error) {
           console.log(error);
           return res.status(400).json({ message: error.sqlMessage });
-        }
-        // 반복 스케줄 첫 추가일 경우
-        if (groupIdx && groupIdx === -1) {
-          // Update SQL Query
-          const update_query = `UPDATE kk_scheduler SET
-          kk_scheduler_groupIdx = ?
-          WHERE kk_scheduler_idx = ?`;
-          // Update Value 명시
-          const update_value = [result.insertId, result.insertId];
-          await queryAsync(connection_KK, update_query, update_value);
         }
         return res.status(200).json({
           message: "Scheduler Row DB INSERT Success! - 200 OK",
@@ -259,10 +244,18 @@ const SchedulerController = {
 
       if (insertValues.length > 0) {
         const insertQuery = `INSERT INTO kk_scheduler
-          (kk_scheduler_start, kk_scheduler_end, kk_scheduler_title, kk_scheduler_teacher,
-           kk_scheduler_courseName, kk_scheduler_participants, kk_scheduler_times,
-           kk_scheduler_backgroundColor, kk_scheduler_courseTimes, kk_scheduler_groupIdx, kk_scheduler_notes)
-          VALUES ?`;
+        (kk_scheduler_start,
+        kk_scheduler_end,
+        kk_scheduler_title,
+        kk_scheduler_teacher,
+        kk_scheduler_courseName,
+        kk_scheduler_participants,
+        kk_scheduler_times,
+        kk_scheduler_backgroundColor,
+        kk_scheduler_courseTimes,
+        kk_scheduler_groupIdx,
+        kk_scheduler_notes)
+        VALUES ?`;
 
         const result = await queryAsync(connection_KK, insertQuery, [
           insertValues,
@@ -291,7 +284,7 @@ const SchedulerController = {
     }
   },
   // KK Schedule Data Drag UPDATE
-  postKKSchedulerDataDragUpdate: async (req, res) => {
+  patchKKSchedulerDataDragUpdate: async (req, res) => {
     const { data } = req.body;
     // console.log(data);
     let parseData;
@@ -340,7 +333,7 @@ const SchedulerController = {
     }
   },
   // KK Schedule Data Click UPDATE
-  postKKSchedulerDataClickUpdate: async (req, res) => {
+  patchKKSchedulerDataClickUpdate: async (req, res) => {
     const { data } = req.body;
     // console.log(data);
     let parseData;

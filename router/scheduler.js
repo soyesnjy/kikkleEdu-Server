@@ -8,8 +8,8 @@ const {
   getKKSchedulerDataRead,
   postKKSchedulerDataCreate,
   postKKSchedulerDataRecursiveCreate,
-  postKKSchedulerDataDragUpdate,
-  postKKSchedulerDataClickUpdate,
+  patchKKSchedulerDataDragUpdate,
+  patchKKSchedulerDataClickUpdate,
   deleteKKSchedulerDataDelete,
   deleteKKSchedulerDataGroupDelete,
 } = SchedulerController;
@@ -19,8 +19,8 @@ router.get("/read", getKKSchedulerDataRead);
 router.post("/create", postKKSchedulerDataCreate);
 router.post("/create/group", postKKSchedulerDataRecursiveCreate); // Group Create Routing
 
-router.patch("/update/drag", postKKSchedulerDataDragUpdate); // Drag Update Routing
-router.patch("/update/click", postKKSchedulerDataClickUpdate); // Click Update Routing
+router.patch("/update/drag", patchKKSchedulerDataDragUpdate); // Drag Update Routing
+router.patch("/update/click", patchKKSchedulerDataClickUpdate); // Click Update Routing
 
 router.delete("/delete", deleteKKSchedulerDataDelete);
 router.delete("/delete/group", deleteKKSchedulerDataGroupDelete); // Group Delete Routing
