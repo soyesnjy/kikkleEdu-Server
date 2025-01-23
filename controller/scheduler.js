@@ -201,6 +201,113 @@ const SchedulerController = {
       });
     }
   },
+  // KK Schedule Data Recursive CREATE
+  postKKSchedulerDataRecursiveCreate: async (req, res) => {
+    const { data } = req.body;
+    // console.log(data);
+    let parseData;
+
+    try {
+      // 입력값 파싱
+      if (typeof data === "string") {
+        parseData = JSON.parse(data);
+      } else parseData = data;
+
+      const { title, start, end, extendedProps, backgroundColor, groupIdx } =
+        parseData;
+
+      // 필수 Input 없을 경우1
+      if (!title || !start || !end || !extendedProps || !backgroundColor) {
+        console.log("Non Input Value - 400");
+        return res.status(400).json({ message: "Non Input Value - 400" });
+      }
+
+      const {
+        teacherName,
+        courseName,
+        participants,
+        times,
+        courseTimes,
+        notes,
+      } = extendedProps;
+
+      // 필수 Input 없을 경우2
+      if (
+        !teacherName ||
+        !courseName ||
+        participants < 0 ||
+        times < 0 ||
+        !courseTimes
+      ) {
+        console.log("Non Input Value - 400");
+        return res.status(400).json({ message: "Non Input Value - 400" });
+      }
+
+      // INSERT Query
+      const insert_query = `INSERT INTO kk_scheduler
+      (kk_scheduler_start,
+      kk_scheduler_end,
+      kk_scheduler_title,
+      kk_scheduler_teacher,
+      kk_scheduler_courseName,
+      kk_scheduler_participants,
+      kk_scheduler_times,
+      kk_scheduler_backgroundColor,
+      kk_scheduler_courseTimes,
+      ${groupIdx && groupIdx !== -1 ? `kk_scheduler_groupIdx,` : ""}
+      kk_scheduler_notes)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?${
+        groupIdx && groupIdx !== -1 ? `,?` : ""
+      })`;
+      // console.log(insert_query);
+
+      // INSERT Value 명시
+      const insert_value = [
+        start,
+        end, // 강사 idx. 관리자 페이지에서 update
+        title,
+        teacherName,
+        courseName,
+        participants,
+        times,
+        backgroundColor,
+        courseTimes,
+        ...(groupIdx !== -1 ? [groupIdx] : []),
+        notes,
+      ];
+
+      // console.log(insert_value);
+
+      connection_KK.query(insert_query, insert_value, async (error, result) => {
+        if (error) {
+          console.log(error);
+          return res.status(400).json({ message: error.sqlMessage });
+        }
+        // 반복 스케줄 첫 추가일 경우
+        if (groupIdx && groupIdx === -1) {
+          // Update SQL Query
+          const update_query = `UPDATE kk_scheduler SET
+          kk_scheduler_groupIdx = ?
+          WHERE kk_scheduler_idx = ?`;
+          // Update Value 명시
+          const update_value = [result.insertId, result.insertId];
+          await queryAsync(connection_KK, update_query, update_value);
+        }
+        return res.status(200).json({
+          message: "Scheduler Row DB INSERT Success! - 200 OK",
+          data: {
+            id: result.insertId,
+          },
+        });
+      });
+    } catch (err) {
+      delete err.headers;
+      console.error(err);
+      return res.status(500).json({
+        message: `Server Error : ${err.message}`,
+      });
+    }
+  },
   // KK Schedule Data Drag UPDATE
   postKKSchedulerDataDragUpdate: async (req, res) => {
     const { data } = req.body;
@@ -262,8 +369,15 @@ const SchedulerController = {
         parseData = JSON.parse(data);
       } else parseData = data;
 
-      const { id, groupIdx, title, end, extendedProps, backgroundColor } =
-        parseData;
+      const {
+        id,
+        groupIdx,
+        title,
+        end,
+        extendedProps,
+        backgroundColor,
+        isAllEdit,
+      } = parseData;
 
       // 필수 Input 없을 경우
       if (!id || !title || !end || !extendedProps || !backgroundColor) {
@@ -307,7 +421,7 @@ const SchedulerController = {
         SEC_TO_TIME(${courseTimes} * 60)
       )
       WHERE kk_scheduler_idx = ?
-      ${groupIdx ? `OR kk_scheduler_groupIdx = ${groupIdx}` : ""}
+      ${isAllEdit ? `OR kk_scheduler_groupIdx = ${groupIdx}` : ""}
       `;
 
       // Update Value
@@ -356,6 +470,29 @@ const SchedulerController = {
         return res
           .status(200)
           .json({ message: "Scheduler DB Delete Success!" });
+      });
+    } catch (err) {
+      delete err.headers;
+      console.error(err);
+      return res.status(500).json({
+        message: `Server Error : ${err.message}`,
+      });
+    }
+  },
+  // KK Schedule Data Group DELETE
+  deleteKKSchedulerDataGroupDelete: (req, res) => {
+    const { groupIdx } = req.query;
+    try {
+      const delete_query = `DELETE FROM kk_scheduler WHERE kk_scheduler_groupIdx = ?`;
+
+      connection_KK.query(delete_query, [groupIdx], (err) => {
+        if (err) {
+          console.log(err);
+          return res.json({ message: err.sqlMessage });
+        }
+        return res
+          .status(200)
+          .json({ message: "Scheduler DB Group Delete Success!" });
       });
     } catch (err) {
       delete err.headers;

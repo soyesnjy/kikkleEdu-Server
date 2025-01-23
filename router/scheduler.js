@@ -10,13 +10,18 @@ const {
   postKKSchedulerDataDragUpdate,
   postKKSchedulerDataClickUpdate,
   deleteKKSchedulerDataDelete,
+  deleteKKSchedulerDataGroupDelete,
 } = SchedulerController;
 
 router.get("/read", getKKSchedulerDataRead);
+
 router.post("/create", postKKSchedulerDataCreate);
+
 router.patch("/update/drag", postKKSchedulerDataDragUpdate); // Drag Update Routing
 router.patch("/update/click", postKKSchedulerDataClickUpdate); // Click Update Routing
-router.delete("/:id", deleteKKSchedulerDataDelete);
+
+router.delete("/delete", deleteKKSchedulerDataDelete);
+router.delete("/delete/group", deleteKKSchedulerDataGroupDelete); // Group Delete Routing
 
 // 에러 메세지 처리
 router.use(errController.errMessageHandler);
