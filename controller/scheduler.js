@@ -204,107 +204,89 @@ const SchedulerController = {
   // KK Schedule Data Recursive CREATE
   postKKSchedulerDataRecursiveCreate: async (req, res) => {
     const { data } = req.body;
-    // console.log(data);
-    let parseData;
-
     try {
-      // 입력값 파싱
-      if (typeof data === "string") {
-        parseData = JSON.parse(data);
-      } else parseData = data;
-
-      const { title, start, end, extendedProps, backgroundColor, groupIdx } =
-        parseData;
-
-      // 필수 Input 없을 경우1
-      if (!title || !start || !end || !extendedProps || !backgroundColor) {
-        console.log("Non Input Value - 400");
-        return res.status(400).json({ message: "Non Input Value - 400" });
-      }
-
       const {
-        teacherName,
-        courseName,
-        participants,
-        times,
-        courseTimes,
-        notes,
-      } = extendedProps;
+        title,
+        start,
+        // end,
+        extendedProps,
+        backgroundColor,
+        isAllAdd,
+        recursiveEndDate,
+      } = data;
 
-      // 필수 Input 없을 경우2
-      if (
-        !teacherName ||
-        !courseName ||
-        participants < 0 ||
-        times < 0 ||
-        !courseTimes
-      ) {
-        console.log("Non Input Value - 400");
-        return res.status(400).json({ message: "Non Input Value - 400" });
+      const insertValues = [];
+      let groupIdx = null;
+
+      if (isAllAdd && recursiveEndDate) {
+        const startDate = new Date(start);
+        const endDate = new Date(recursiveEndDate);
+        const dayOfWeek = startDate.getDay();
+
+        groupIdx = Date.now(); // 고유한 그룹 ID 생성 (Timestamp 기반)
+
+        for (
+          let date = new Date(startDate);
+          date <= endDate;
+          date.setDate(date.getDate() + 1)
+        ) {
+          if (date.getDay() === dayOfWeek) {
+            const eventStartDate = new Date(date);
+            const eventEndDate = new Date(
+              eventStartDate.getTime() + extendedProps.courseTimes * 60 * 1000
+            );
+
+            insertValues.push([
+              eventStartDate.toISOString(),
+              eventEndDate.toISOString(),
+              title,
+              extendedProps.teacherName,
+              extendedProps.courseName,
+              extendedProps.participants,
+              extendedProps.times,
+              backgroundColor,
+              extendedProps.courseTimes,
+              groupIdx, // 그룹 식별자 추가
+              extendedProps.notes,
+            ]);
+          }
+        }
+      } else {
+        return res
+          .status(400)
+          .json({ message: "Non recursiveEndDate Data Input" });
       }
 
-      // INSERT Query
-      const insert_query = `INSERT INTO kk_scheduler
-      (kk_scheduler_start,
-      kk_scheduler_end,
-      kk_scheduler_title,
-      kk_scheduler_teacher,
-      kk_scheduler_courseName,
-      kk_scheduler_participants,
-      kk_scheduler_times,
-      kk_scheduler_backgroundColor,
-      kk_scheduler_courseTimes,
-      ${groupIdx && groupIdx !== -1 ? `kk_scheduler_groupIdx,` : ""}
-      kk_scheduler_notes)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?${
-        groupIdx && groupIdx !== -1 ? `,?` : ""
-      })`;
-      // console.log(insert_query);
+      if (insertValues.length > 0) {
+        const insertQuery = `INSERT INTO kk_scheduler
+          (kk_scheduler_start, kk_scheduler_end, kk_scheduler_title, kk_scheduler_teacher,
+           kk_scheduler_courseName, kk_scheduler_participants, kk_scheduler_times,
+           kk_scheduler_backgroundColor, kk_scheduler_courseTimes, kk_scheduler_groupIdx, kk_scheduler_notes)
+          VALUES ?`;
 
-      // INSERT Value 명시
-      const insert_value = [
-        start,
-        end, // 강사 idx. 관리자 페이지에서 update
-        title,
-        teacherName,
-        courseName,
-        participants,
-        times,
-        backgroundColor,
-        courseTimes,
-        ...(groupIdx !== -1 ? [groupIdx] : []),
-        notes,
-      ];
+        const result = await queryAsync(connection_KK, insertQuery, [
+          insertValues,
+        ]);
 
-      // console.log(insert_value);
+        const insertedIds = result.insertId;
+        const results = insertValues.map((_, index) => ({
+          id: insertedIds + index,
+          start: insertValues[index][0].slice(0, -5), // timezone(.000z) 제거
+          end: insertValues[index][1].slice(0, -5), // timezone(.000z) 제거
+          groupIdx,
+        }));
 
-      connection_KK.query(insert_query, insert_value, async (error, result) => {
-        if (error) {
-          console.log(error);
-          return res.status(400).json({ message: error.sqlMessage });
-        }
-        // 반복 스케줄 첫 추가일 경우
-        if (groupIdx && groupIdx === -1) {
-          // Update SQL Query
-          const update_query = `UPDATE kk_scheduler SET
-          kk_scheduler_groupIdx = ?
-          WHERE kk_scheduler_idx = ?`;
-          // Update Value 명시
-          const update_value = [result.insertId, result.insertId];
-          await queryAsync(connection_KK, update_query, update_value);
-        }
         return res.status(200).json({
-          message: "Scheduler Row DB INSERT Success! - 200 OK",
-          data: {
-            id: result.insertId,
-          },
+          message: "Batch Insert Success",
+          data: results,
         });
-      });
+      } else {
+        return res.status(400).json({ message: "No valid events to insert" });
+      }
     } catch (err) {
-      delete err.headers;
       console.error(err);
       return res.status(500).json({
-        message: `Server Error : ${err.message}`,
+        message: `Server Error: ${err.message}`,
       });
     }
   },
