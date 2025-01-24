@@ -7,7 +7,7 @@ const { SchedulerController } = require("../controller/scheduler");
 const {
   getKKSchedulerDataRead,
   postKKSchedulerDataCreate,
-  postKKSchedulerDataRecursiveCreate,
+  postKKSchedulerDataGroupCreate,
   patchKKSchedulerDataDragUpdate,
   patchKKSchedulerDataClickUpdate,
   deleteKKSchedulerDataDelete,
@@ -17,7 +17,7 @@ const {
 router.get("/read", getKKSchedulerDataRead);
 
 router.post("/create", postKKSchedulerDataCreate);
-router.post("/create/group", postKKSchedulerDataRecursiveCreate); // Group Create Routing
+router.post("/create/group", postKKSchedulerDataGroupCreate); // Group Create Routing
 
 router.patch("/update/drag", patchKKSchedulerDataDragUpdate); // Drag Update Routing
 router.patch("/update/click", patchKKSchedulerDataClickUpdate); // Click Update Routing

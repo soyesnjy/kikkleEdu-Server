@@ -186,23 +186,50 @@ const SchedulerController = {
       });
     }
   },
-  // KK Schedule Data Recursive CREATE
-  postKKSchedulerDataRecursiveCreate: async (req, res) => {
+  // KK Schedule Data Group CREATE
+  postKKSchedulerDataGroupCreate: async (req, res) => {
     const { data } = req.body;
+    let parseData;
     try {
+      // 입력값 파싱
+      if (typeof data === "string") {
+        parseData = JSON.parse(data);
+      } else parseData = data;
+
       const {
         title,
         start,
-        // end,
         extendedProps,
         backgroundColor,
         isAllAdd,
         recursiveEndDate,
-      } = data;
+      } = parseData;
+
+      // 필수 Input 없을 경우1
+      if (!title || !start || !extendedProps || !backgroundColor) {
+        console.log("Non Input Value - 400");
+        return res.status(400).json({ message: "Non Input Value - 400" });
+      }
+
+      const { teacherName, courseName, participants, times, courseTimes } =
+        extendedProps;
+
+      // 필수 Input 없을 경우2
+      if (
+        !teacherName ||
+        !courseName ||
+        participants < 0 ||
+        times < 0 ||
+        !courseTimes
+      ) {
+        console.log("Non Input Value - 400");
+        return res.status(400).json({ message: "Non Input Value - 400" });
+      }
 
       const insertValues = [];
       let groupIdx = null;
 
+      // 반복 일정 추가
       if (isAllAdd && recursiveEndDate) {
         const startDate = new Date(start);
         const endDate = new Date(recursiveEndDate);
@@ -239,7 +266,7 @@ const SchedulerController = {
       } else {
         return res
           .status(400)
-          .json({ message: "Non recursiveEndDate Data Input" });
+          .json({ message: "Non recursiveEndDate OR isAllAdd Data Input" });
       }
 
       if (insertValues.length > 0) {
