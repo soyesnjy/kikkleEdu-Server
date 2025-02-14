@@ -50,37 +50,30 @@ const ReservationController = {
       // console.log(lastPageNum);
 
       const select_query = `SELECT 
-    r.kk_reservation_idx,
-    r.kk_teacher_idx,
-    r.kk_reservation_date,
-    r.kk_reservation_time,
-    r.kk_reservation_approve_status,
-    r.kk_class_idx,
-    c.kk_class_title,
-    a.kk_agency_name,
-    a.kk_agency_phoneNum,
-    GROUP_CONCAT(
-        CONCAT(
-            'kk_teacher_idx:',t.kk_teacher_idx,', ',
-            'kk_teacher_name:',t.kk_teacher_name
-        ) SEPARATOR ' | '
-    ) AS teacher_info , (${count_query}) AS total_count
-FROM 
-    kk_reservation AS r
-JOIN 
-    kk_class AS c ON r.kk_class_idx = c.kk_class_idx
-JOIN 
-    kk_agency AS a ON r.kk_agency_idx = a.kk_agency_idx
-JOIN 
-    kk_reservation_teacher AS rt ON r.kk_reservation_idx = rt.kk_reservation_idx
-JOIN 
-    kk_teacher AS t ON rt.kk_teacher_idx = t.kk_teacher_idx
-${date ? `WHERE kk_reservation_date LIKE '%${date}%'` : ""}
-GROUP BY 
-    r.kk_reservation_idx, c.kk_class_title, a.kk_agency_name
-ORDER BY 
-    r.kk_reservation_created_at DESC LIMIT ? OFFSET ?;
-`;
+      r.kk_reservation_idx,
+      r.kk_teacher_idx,
+      r.kk_reservation_date,
+      r.kk_reservation_time,
+      r.kk_reservation_approve_status,
+      r.kk_class_idx,
+      c.kk_class_title,
+      a.kk_agency_name,
+      a.kk_agency_phoneNum,
+      GROUP_CONCAT(
+          CONCAT(
+              'kk_teacher_idx:',t.kk_teacher_idx,', ',
+              'kk_teacher_name:',t.kk_teacher_name
+          ) SEPARATOR ' | '
+      ) AS teacher_info , (${count_query}) AS total_count FROM kk_reservation AS r
+      JOIN kk_class AS c ON r.kk_class_idx = c.kk_class_idx
+      JOIN kk_agency AS a ON r.kk_agency_idx = a.kk_agency_idx
+      JOIN kk_reservation_teacher AS rt ON r.kk_reservation_idx = rt.kk_reservation_idx
+      JOIN kk_teacher AS t ON rt.kk_teacher_idx = t.kk_teacher_idx
+      WHERE t.kk_teacher_approve_status = 1
+      ${date ? `AND kk_reservation_date LIKE '%${date}%'` : ""}
+      GROUP BY r.kk_reservation_idx, c.kk_class_title, a.kk_agency_name
+      ORDER BY r.kk_reservation_created_at DESC LIMIT ? OFFSET ?;
+      `;
 
       // console.log(select_query);
       // 데이터베이스 쿼리 실행

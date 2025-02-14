@@ -18,23 +18,16 @@ function queryAsync(connection, query, parameters) {
     });
   });
 }
-// // 프로미스 resolve 반환값 사용. (User Data return)
-// async function fetchUserData(connection, query) {
-//   try {
-//     let results = await queryAsync(connection, query, []);
-//     // console.log(results[0]);
-//     return results;
-//   } catch (error) {
-//     console.error(error);
-//   }
-// }
 
 const SchedulerController = {
   // KK Schedule Data READ
   getKKSchedulerDataRead: async (req, res) => {
     try {
       const query = req.query;
-      const { monthQuery, searchQuery } = query;
+      const {
+        monthQuery, // 필수
+        searchQuery, // 선택
+      } = query;
       // console.log(query);
 
       const select_query = `
@@ -43,7 +36,7 @@ const SchedulerController = {
       kk_scheduler_groupIdx AS groupIdx,
       kk_scheduler_title AS title,
       DATE_FORMAT(kk_scheduler_start, '%Y-%m-%dT%H:%i:%s') AS start,
-      DATE_FORMAT(kk_scheduler_end, '%Y-%m-%dT%H:%i:%s')   AS end,
+      DATE_FORMAT(kk_scheduler_end, '%Y-%m-%dT%H:%i:%s') AS end,
       kk_scheduler_backgroundColor AS backgroundColor,
       JSON_OBJECT(
         'teacherName',      kk_scheduler_teacher,
@@ -55,9 +48,9 @@ const SchedulerController = {
       ) AS extendedProps
       FROM kk_scheduler
       WHERE MONTH(kk_scheduler_start) IN (
-        CASE WHEN ${monthQuery} = 1  THEN 12 ELSE ${monthQuery} - 1 END,
+        CASE WHEN ${monthQuery} = 1 THEN 12 ELSE ${monthQuery} - 1 END,
         ${monthQuery},
-        CASE WHEN ${monthQuery} = 12 THEN 1  ELSE ${monthQuery} + 1 END
+        CASE WHEN ${monthQuery} = 12 THEN 1 ELSE ${monthQuery} + 1 END
       )
       ${searchQuery ? `AND kk_scheduler_teacher LIKE '%${searchQuery}%'` : ""}
       `;
