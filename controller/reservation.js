@@ -44,10 +44,23 @@ const ReservationController = {
       const offset = (page - 1) * limit;
 
       // Pagination Last Number Select
-      const count_query = `SELECT COUNT(*) FROM kk_reservation`;
-      // const count_data = await fetchUserData(connection_KK, count_query);
-      // const lastPageNum = Math.ceil(count_data[0]["COUNT(*)"] / limit);
-      // console.log(lastPageNum);
+      // const count_query = `SELECT COUNT(*) FROM kk_reservation AS r
+      // LEFT JOIN kk_teacher AS t ON r.kk_teacher_idx = t.kk_teacher_idx
+      // WHERE (r.kk_teacher_idx IS NULL OR t.kk_teacher_approve_status = 1)`;
+
+      const count_query = `
+      SELECT COUNT(*)
+      FROM (
+          SELECT r.kk_reservation_idx
+          FROM kk_reservation AS r
+          JOIN kk_class AS c ON r.kk_class_idx = c.kk_class_idx
+          JOIN kk_agency AS a ON r.kk_agency_idx = a.kk_agency_idx
+          JOIN kk_reservation_teacher AS rt ON r.kk_reservation_idx = rt.kk_reservation_idx
+          JOIN kk_teacher AS t ON rt.kk_teacher_idx = t.kk_teacher_idx
+          WHERE t.kk_teacher_approve_status = 1
+          ${date ? `AND r.kk_reservation_date LIKE '%${date}%'` : ""}
+          GROUP BY r.kk_reservation_idx
+      ) AS count_table`;
 
       const select_query = `SELECT 
       r.kk_reservation_idx,
@@ -64,7 +77,8 @@ const ReservationController = {
               'kk_teacher_idx:',t.kk_teacher_idx,', ',
               'kk_teacher_name:',t.kk_teacher_name
           ) SEPARATOR ' | '
-      ) AS teacher_info , (${count_query}) AS total_count FROM kk_reservation AS r
+      ) AS teacher_info , (${count_query}) AS total_count
+      FROM kk_reservation AS r
       JOIN kk_class AS c ON r.kk_class_idx = c.kk_class_idx
       JOIN kk_agency AS a ON r.kk_agency_idx = a.kk_agency_idx
       JOIN kk_reservation_teacher AS rt ON r.kk_reservation_idx = rt.kk_reservation_idx
