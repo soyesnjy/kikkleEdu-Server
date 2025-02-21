@@ -34,6 +34,7 @@ const dbconfig_kk = {
   user: "admin",
   password: process.env.DATABASE_PASSWORD,
   database: "soyesKK",
+  charset: "utf8mb4", // ✅ 추가! 이모지 깨짐 방지
 };
 
 module.exports = {
