@@ -177,6 +177,9 @@ app.use("/kikle/board", BoardRouter);
 // 스케줄러 관련 Router
 const SchedulerRouter = require("./router/scheduler");
 app.use("/kikle/scheduler", SchedulerRouter);
+// 상점점 관련 Router
+const ShopRouter = require("./router/shop");
+app.use("/kikle/shop", ShopRouter);
 
 console.log("Kikkle 서버 Start~!");
 // https 보안 파일이 있을 경우

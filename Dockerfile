@@ -1,5 +1,5 @@
 # 사용할 Node.js의 버전을 명시합니다.
-FROM node:18
+FROM node:20
 
 # 애플리케이션 디렉토리를 생성합니다.
 WORKDIR /usr/src/app
