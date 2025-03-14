@@ -43,7 +43,7 @@ async function syncPayment(paymentId) {
 const ShopController = {
   // PortOne Payment Compleate
   postPortOnePaymentCompleate: async (req, res, next) => {
-    console.log("PortOne Payment Compleate API 호출");
+    // console.log("PortOne Payment Compleate API 호출");
     let parseData;
     try {
       const { data } = req.body;

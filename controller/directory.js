@@ -247,13 +247,14 @@ const getSubDirectoriesAndFiles = async (parentId) => {
 const directoryController = {
   // Directory READ
   getDirectoryDataRead: async (req, res) => {
-    // console.log("KK Directory READ API 호출");
-    const { form } = req.query; // TODO# 유형별 데이터 조회시 사용
+    const { form } = req.query; // music, video, class
     try {
+      // 폴더정보 조회
       const directories = await fetchUserData(
         connection_KK,
         `SELECT * FROM kk_directory WHERE kk_directory_form = '${form}'`
       );
+      // 파일정보 조회
       const tracks = await fetchUserData(
         connection_KK,
         `SELECT * FROM kk_file WHERE kk_file_form = '${form}' ORDER BY kk_file_name ASC`
