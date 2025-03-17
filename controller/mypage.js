@@ -6,31 +6,6 @@ const { dbconfig_kk } = require("../DB/database");
 const connection_KK = mysql.createConnection(dbconfig_kk);
 connection_KK.connect();
 
-// const { KK_User_Table_Info } = require("../DB/database_table_info");
-
-// 동기식 DB 접근 함수 1. Promise 생성 함수
-function queryAsync(connection, query, parameters) {
-  return new Promise((resolve, reject) => {
-    connection.query(query, parameters, (error, results, fields) => {
-      if (error) {
-        reject(error);
-      } else {
-        resolve(results);
-      }
-    });
-  });
-}
-// 프로미스 resolve 반환값 사용. (User Data return)
-async function fetchUserData(connection, query) {
-  try {
-    let results = await queryAsync(connection, query, []);
-    // console.log(results[0]);
-    return results;
-  } catch (error) {
-    console.error(error);
-  }
-}
-
 const mypageController = {
   // KK Teacher Attend Data READ
   getKKTeacherAttendDataRead: async (req, res) => {
@@ -51,12 +26,13 @@ const mypageController = {
       FROM kk_attend AS a
       JOIN kk_reservation AS r ON a.kk_reservation_idx = r.kk_reservation_idx
       JOIN kk_teacher AS t ON r.kk_teacher_idx = t.kk_teacher_idx
+      WHERE t.kk_teacher_approve_status = 1
       ${
         agencyIdx
-          ? `WHERE r.kk_agency_idx = '${keyValue}' AND r.kk_reservation_approve_status = '1'`
+          ? `AND r.kk_agency_idx = '${keyValue}' AND r.kk_reservation_approve_status = '1'`
           : userIdx
-          ? `WHERE r.kk_teacher_idx = '${keyValue}' AND r.kk_reservation_approve_status = '1'`
-          : `WHERE r.kk_reservation_approve_status = '1'`
+          ? `AND r.kk_teacher_idx = '${keyValue}' AND r.kk_reservation_approve_status = '1'`
+          : `AND r.kk_reservation_approve_status = '1'`
       } ${name ? `AND t.kk_teacher_name LIKE '%${name}%'` : ""}`;
 
       // const count_data = await fetchUserData(connection_KK, count_query);
@@ -80,12 +56,13 @@ const mypageController = {
       JOIN kk_teacher AS t ON r.kk_teacher_idx = t.kk_teacher_idx
       JOIN kk_class AS c ON r.kk_class_idx = c.kk_class_idx
       JOIN kk_agency AS ag ON r.kk_agency_idx = ag.kk_agency_idx
+      WHERE t.kk_teacher_approve_status = 1
       ${
         agencyIdx
-          ? `WHERE r.kk_agency_idx = '${keyValue}' AND r.kk_reservation_approve_status = '1'`
+          ? `AND r.kk_agency_idx = '${keyValue}' AND r.kk_reservation_approve_status = '1'`
           : userIdx
-          ? `WHERE r.kk_teacher_idx = '${keyValue}' AND r.kk_reservation_approve_status = '1'`
-          : `WHERE r.kk_reservation_approve_status = '1'`
+          ? `AND r.kk_teacher_idx = '${keyValue}' AND r.kk_reservation_approve_status = '1'`
+          : `AND r.kk_reservation_approve_status = '1'`
       }
       ${name ? `AND t.kk_teacher_name LIKE '%${name}%'` : ""}
       ORDER BY a.kk_attend_date DESC LIMIT ? OFFSET ?;
@@ -168,8 +145,6 @@ const mypageController = {
     // console.log("KK Agency Reservation Data READ API 호출");
     try {
       const { pageNum, userIdx } = req.query;
-      // 클라이언트로부터 페이지 번호 받기 (기본값: 1)
-      // console.log(pageNum);
       const page = pageNum || 1;
       const limit = 10; // 한 페이지에 보여줄 리뷰의 수
       const offset = (page - 1) * limit;
@@ -178,25 +153,25 @@ const mypageController = {
 
       // Pagination Last Number Select
       const count_query = `SELECT COUNT(*) FROM kk_reservation WHERE kk_agency_idx = '${keyValue}'`;
-      // const count_data = await fetchUserData(connection_KK, count_query);
-      // const lastPageNum = Math.ceil(count_data[0]["COUNT(*)"] / limit);
-      // console.log(lastPageNum);
 
       // SQL 쿼리 준비: 최신순으로 유저 데이터 가져오기
       const select_query = `SELECT
-    c.kk_class_title,
-    r.kk_reservation_date,
-    r.kk_reservation_start_date,
-    r.kk_reservation_end_date,
-    r.kk_reservation_approve_status,
-    t.kk_teacher_name,
-    t.kk_teacher_phoneNum, (${count_query}) AS total_count
-FROM kk_reservation AS r
-LEFT JOIN kk_teacher AS t ON r.kk_teacher_idx = t.kk_teacher_idx
-JOIN kk_class AS c ON r.kk_class_idx = c.kk_class_idx
-WHERE r.kk_agency_idx = '${keyValue}'
-ORDER BY r.kk_reservation_created_at DESC LIMIT ? OFFSET ?;
-`;
+      c.kk_class_title,
+      r.kk_reservation_date,
+      r.kk_reservation_start_date,
+      r.kk_reservation_end_date,
+      r.kk_reservation_approve_status,
+      CASE 
+        WHEN t.kk_teacher_approve_status = 0 THEN ''
+        ELSE t.kk_teacher_name
+      END AS kk_teacher_name,
+      t.kk_teacher_phoneNum, (${count_query}) AS total_count
+      FROM kk_reservation AS r
+      LEFT JOIN kk_teacher AS t ON r.kk_teacher_idx = t.kk_teacher_idx
+      JOIN kk_class AS c ON r.kk_class_idx = c.kk_class_idx
+      WHERE r.kk_agency_idx = '${keyValue}'
+      ORDER BY r.kk_reservation_created_at DESC LIMIT ? OFFSET ?;
+      `;
       const select_values = [limit, offset];
       // 데이터베이스 쿼리 실행
       connection_KK.query(select_query, select_values, (err, data) => {

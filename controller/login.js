@@ -867,12 +867,8 @@ const loginController_KK = {
   },
   // (Middle Ware) KK JWT 토큰 유효성 검사
   vaildateKKTokenCheck: async (req, res, next) => {
-    // const { userClass, userIdx } = req.query; // Request Query - userClass, userIdx
-    // authorization 헤더 체크
-    // const accessToken = req.session.accessToken;
-    // const sessionId = req.sessionID;
-    const cookie_refreshToken = req.cookies.refreshToken; // Request Cookie - refreshToken => 스토어 배포 어플에 Cookie 적용이 안됨
-    // console.log(cookie_refreshToken);
+    // Request Cookie - refreshToken => 스토어 배포 어플에 Cookie 적용이 안됨
+    const cookie_refreshToken = req.cookies.refreshToken;
 
     // 미로그인 회원 접근
     if (!req) {
