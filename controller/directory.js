@@ -14,7 +14,7 @@ connection_KK.connect();
 // 쿼리 실행을 Promise로 변환
 const query = util.promisify(connection_KK.query).bind(connection_KK);
 
-const { Review_Table_Info } = require("../DB/database_table_info");
+// const { Review_Table_Info } = require("../DB/database_table_info");
 
 // 구글 권한 관련
 const { google } = require("googleapis");
@@ -24,14 +24,14 @@ const { google } = require("googleapis");
 // GCP IAM 서비스 계정 인증
 const serviceAccount = {
   private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, "\n"),
-  client_email: process.env.GOOGLE_CLIENT_EMAIL,
-  project_id: process.env.GOOGLE_PROJECT_ID,
+  client_email: process.env.GOOGLE_CLIENT_EMAIL, // GCP IAM 계정 Email
+  project_id: process.env.GOOGLE_PROJECT_ID, // GCP Project ID
 };
 
 const auth_google_drive = new google.auth.JWT({
   email: serviceAccount.client_email,
   key: serviceAccount.private_key,
-  scopes: ["https://www.googleapis.com/auth/drive"],
+  scopes: ["https://www.googleapis.com/auth/drive"], // 사용 영역 설정(Google Drive API 전체)
 });
 
 const drive = google.drive({ version: "v3", auth: auth_google_drive });
@@ -117,11 +117,12 @@ async function fetchUserData(connection, query) {
   }
 }
 
+// Google Drive Music,Class 파일 저장 함수
 const fileDriveSave = async (fileData) => {
   try {
     // 첨부파일 Google Drive 저장
     const { fileName, fileType, baseData } = fileData;
-    const [baseType, zipBase64] = baseData.split(",");
+    const [_, zipBase64] = baseData.split(",");
     const bufferStream = new stream.PassThrough();
     bufferStream.end(Buffer.from(zipBase64, "base64"));
 
@@ -173,35 +174,35 @@ const fileDriveSave = async (fileData) => {
   }
 };
 
-// Google Drive에 파일 저장 함수
-const fileVideoDriveSave = async (file, fileName, mimeType) => {
-  try {
-    const bufferStream = new stream.PassThrough();
-    bufferStream.end(file.buffer);
+// // (구) Google Drive Video 파일 저장 함수
+// const fileVideoDriveSave = async (file, fileName, mimeType) => {
+//   try {
+//     const bufferStream = new stream.PassThrough();
+//     bufferStream.end(file.buffer);
 
-    const fileMetadata = { name: fileName };
-    const media = { mimeType: mimeType, body: bufferStream };
+//     const fileMetadata = { name: fileName };
+//     const media = { mimeType: mimeType, body: bufferStream };
 
-    // Google Drive에 파일 업로드
-    const createResponse = await drive.files.create({
-      requestBody: fileMetadata,
-      media: media,
-      fields: "id, webViewLink, webContentLink",
-      uploadType: "resumable", // Resumable Upload 사용
-    });
+//     // Google Drive에 파일 업로드
+//     const createResponse = await drive.files.create({
+//       requestBody: fileMetadata,
+//       media: media,
+//       fields: "id, webViewLink, webContentLink",
+//       uploadType: "resumable", // Resumable Upload 사용
+//     });
 
-    // Public 권한 설정
-    await drive.permissions.create({
-      fileId: createResponse.data.id,
-      requestBody: { role: "reader", type: "anyone" },
-    });
+//     // Public 권한 설정
+//     await drive.permissions.create({
+//       fileId: createResponse.data.id,
+//       requestBody: { role: "reader", type: "anyone" },
+//     });
 
-    return createResponse.data;
-  } catch (error) {
-    console.error("Google Drive 업로드 중 오류 발생:", error);
-    throw new Error("Google Drive 업로드 실패");
-  }
-};
+//     return createResponse.data;
+//   } catch (error) {
+//     console.error("Google Drive 업로드 중 오류 발생:", error);
+//     throw new Error("Google Drive 업로드 실패");
+//   }
+// };
 
 const getSubDirectoriesAndFiles = async (parentId) => {
   const subItems = [];
@@ -216,14 +217,15 @@ const getSubDirectoriesAndFiles = async (parentId) => {
     );
 
     for (const row of rows) {
+      // 파일인 경우 kk_file 테이블 데이터 삭제
       if (row.kk_directory_type === "file") {
-        // 파일 정보 가져오기
         const fileRows = await query(
           `SELECT kk_file_data_id 
            FROM kk_file 
            WHERE kk_directory_idx = ?`,
           [row.kk_directory_idx]
         );
+        // Google Drive 파일 삭제용 FileID 누적
         subItems.push({
           ...row,
           files: fileRows.map((file) => file.kk_file_data_id),
@@ -245,28 +247,63 @@ const getSubDirectoriesAndFiles = async (parentId) => {
 };
 
 const directoryController = {
-  // Directory READ
+  // (구) Directory READ - form 해당되는 모든 데이터 반환
+  // getDirectoryDataRead: async (req, res) => {
+  //   const { form } = req.query; // music, video, class
+  //   try {
+  //     // 폴더정보 조회
+  //     const directories = await fetchUserData(
+  //       connection_KK,
+  //       `SELECT * FROM kk_directory WHERE kk_directory_form = '${form}'`
+  //     );
+  //     // 파일정보 조회
+  //     const tracks = await fetchUserData(
+  //       connection_KK,
+  //       `SELECT * FROM kk_file WHERE kk_file_form = '${form}' ORDER BY kk_file_name ASC`
+  //     );
+  //     // console.log({ directories, tracks }); // 로그
+  //     return res.status(200).json({ directories, tracks });
+  //   } catch (error) {
+  //     console.log(error);
+  //     return res.status(500).json({ error: "Internal Server Error" });
+  //   }
+  // },
+
+  // (New) Directory READ - form + parentIdx 해당되는 데이터만 반환
   getDirectoryDataRead: async (req, res) => {
-    const { form } = req.query; // music, video, class
+    const { form, parentIdx, adminForm } = req.query; // 특정 부모 디렉토리를 기준으로 조회
+    // console.log(req.query);
     try {
-      // 폴더정보 조회
+      // 특정 폴더의 하위 디렉토리 조회
       const directories = await fetchUserData(
         connection_KK,
-        `SELECT * FROM kk_directory WHERE kk_directory_form = '${form}'`
+        `SELECT * FROM kk_directory WHERE kk_directory_form = '${form}'
+        ${
+          adminForm
+            ? ""
+            : parentIdx
+            ? `AND kk_directory_parent_idx = ${parentIdx}`
+            : "AND kk_directory_parent_idx IS NULL"
+        }
+        `
       );
-      // 파일정보 조회
+      // 해당 폴더의 파일 조회
       const tracks = await fetchUserData(
         connection_KK,
-        `SELECT * FROM kk_file WHERE kk_file_form = '${form}' ORDER BY kk_file_name ASC`
+        `SELECT * FROM kk_file WHERE kk_directory_idx IN (${
+          directories.map((dir) => dir.kk_directory_idx).join(",") || "NULL"
+        })`
       );
-      // console.log({ directories, tracks }); // 로그
+
+      // console.log(tracks);
       return res.status(200).json({ directories, tracks });
     } catch (error) {
       console.log(error);
       return res.status(500).json({ error: "Internal Server Error" });
     }
   },
-  // Directory CREATE
+
+  // Directory Music,Class File CREATE
   postDirectoryDataCreate: async (req, res) => {
     // console.log("KK Directory CREATE API 호출");
     let parseData;
@@ -285,7 +322,7 @@ const directoryController = {
         const { fileData, directoryId, form } = parseData;
 
         const file = await fileDriveSave(fileData);
-        const fileUrl = `https://drive.google.com/file/d/${file.data.id}/preview`;
+        const fileUrl = `https://drive.google.com/file/d/${file.data.id}/preview`; // 미리보기 URL 형식 저장
 
         connection_KK.query(
           "INSERT INTO kk_directory (kk_directory_name, kk_directory_parent_idx, kk_directory_type, kk_directory_form) VALUES (?, ?, ?, ?)",
@@ -354,65 +391,65 @@ const directoryController = {
       res.status(500).send(error.message);
     }
   },
-  // Video File CREATE
-  postDirectoryVideoFileDataCreate: async (req, res) => {
-    // console.log("KK Video File CREATE API 호출");
-    const file = req.file;
-    const { form, directoryId, fileName } = req.body;
-    try {
-      if (!file) {
-        return res.status(400).json({ message: "업로드된 파일이 없습니다." });
-      }
+  // // (구) Video File CREATE
+  // postDirectoryVideoFileDataCreate: async (req, res) => {
+  //   // console.log("KK Video File CREATE API 호출");
+  //   const file = req.file;
+  //   const { form, directoryId, fileName } = req.body;
+  //   try {
+  //     if (!file) {
+  //       return res.status(400).json({ message: "업로드된 파일이 없습니다." });
+  //     }
 
-      // Google Drive에 파일 업로드
-      const uploadedFile = await fileVideoDriveSave(
-        file,
-        file.originalname,
-        file.mimetype
-      );
+  //     // Google Drive에 파일 업로드
+  //     const uploadedFile = await fileVideoDriveSave(
+  //       file,
+  //       file.originalname,
+  //       file.mimetype
+  //     );
 
-      // iframe 미리보기용 링크
-      const fileUrl = `https://drive.google.com/file/d/${uploadedFile.id}/preview`;
+  //     // iframe 미리보기용 링크
+  //     const fileUrl = `https://drive.google.com/file/d/${uploadedFile.id}/preview`;
 
-      // DB 저장
-      connection_KK.query(
-        "INSERT INTO kk_directory (kk_directory_name, kk_directory_parent_idx, kk_directory_type, kk_directory_form) VALUES (?, ?, ?, ?)",
-        [fileName, directoryId, "file", form],
-        (error, results) => {
-          if (error) {
-            console.error(error.sqlMessage);
-            return res
-              .status(400)
-              .json({ message: "kk_directory INSERT Error" });
-          }
-          const fileId = results.insertId;
+  //     // DB 저장
+  //     connection_KK.query(
+  //       "INSERT INTO kk_directory (kk_directory_name, kk_directory_parent_idx, kk_directory_type, kk_directory_form) VALUES (?, ?, ?, ?)",
+  //       [fileName, directoryId, "file", form],
+  //       (error, results) => {
+  //         if (error) {
+  //           console.error(error.sqlMessage);
+  //           return res
+  //             .status(400)
+  //             .json({ message: "kk_directory INSERT Error" });
+  //         }
+  //         const fileId = results.insertId;
 
-          connection_KK.query(
-            "INSERT INTO kk_file (kk_directory_idx, kk_file_path, kk_file_name, kk_file_data_id, kk_file_form) VALUES (?, ?, ?, ?, ?)",
-            [fileId, fileUrl, fileName, uploadedFile.id, form],
-            (error) => {
-              if (error) {
-                console.error("Database error:", error);
-                return res
-                  .status(400)
-                  .json({ message: "kk_file INSERT Error" });
-              }
-              return res.status(200).json({
-                id: fileId,
-                name: fileName,
-                parent_id: directoryId,
-                type: "file",
-                url: fileUrl,
-              });
-            }
-          );
-        }
-      );
-    } catch (error) {
-      console.log(error);
-      res.status(500).send(error.message);
-    }
-  },
+  //         connection_KK.query(
+  //           "INSERT INTO kk_file (kk_directory_idx, kk_file_path, kk_file_name, kk_file_data_id, kk_file_form) VALUES (?, ?, ?, ?, ?)",
+  //           [fileId, fileUrl, fileName, uploadedFile.id, form],
+  //           (error) => {
+  //             if (error) {
+  //               console.error("Database error:", error);
+  //               return res
+  //                 .status(400)
+  //                 .json({ message: "kk_file INSERT Error" });
+  //             }
+  //             return res.status(200).json({
+  //               id: fileId,
+  //               name: fileName,
+  //               parent_id: directoryId,
+  //               type: "file",
+  //               url: fileUrl,
+  //             });
+  //           }
+  //         );
+  //       }
+  //     );
+  //   } catch (error) {
+  //     console.log(error);
+  //     res.status(500).send(error.message);
+  //   }
+  // },
   // Video File CREATE V2
   postDirectoryVideoFileDataCreateV2: async (req, res) => {
     // console.log("KK Video File CREATE V2 API 호출");
@@ -467,76 +504,76 @@ const directoryController = {
       res.status(500).send(error.message);
     }
   },
-  // TODO# Directory UPDATE
-  postDirectoryDataUpdate: (req, res) => {
-    // console.log("ReviewData UPDATE API 호출");
-    const { ReviewData } = req.body;
-    let parseReviewData, parseEnteyID, parseContent;
-    try {
-      // 파싱. Client JSON 데이터
-      if (typeof ReviewData === "string") {
-        parseReviewData = JSON.parse(ReviewData);
-      } else parseReviewData = ReviewData;
+  // // TODO# Directory UPDATE
+  // postDirectoryDataUpdate: (req, res) => {
+  //   // console.log("ReviewData UPDATE API 호출");
+  //   const { ReviewData } = req.body;
+  //   let parseReviewData, parseEnteyID, parseContent;
+  //   try {
+  //     // 파싱. Client JSON 데이터
+  //     if (typeof ReviewData === "string") {
+  //       parseReviewData = JSON.parse(ReviewData);
+  //     } else parseReviewData = ReviewData;
 
-      const { content, entry_id } = parseReviewData;
-      parseEnteyID = entry_id;
-      parseContent = content;
+  //     const { content, entry_id } = parseReviewData;
+  //     parseEnteyID = entry_id;
+  //     parseContent = content;
 
-      // 오늘 날짜 변환
-      // const dateObj = new Date();
-      // const year = dateObj.getFullYear();
-      // const month = ("0" + (dateObj.getMonth() + 1)).slice(-2);
-      // const day = ("0" + dateObj.getDate()).slice(-2);
-      // const date = `${year}-${month}-${day}`;
+  //     // 오늘 날짜 변환
+  //     // const dateObj = new Date();
+  //     // const year = dateObj.getFullYear();
+  //     // const month = ("0" + (dateObj.getMonth() + 1)).slice(-2);
+  //     // const day = ("0" + dateObj.getDate()).slice(-2);
+  //     // const date = `${year}-${month}-${day}`;
 
-      // Review 테이블 및 속성 명시
-      const review_table = Review_Table_Info.table;
-      const review_attribute = Review_Table_Info.attribute;
-      const review_pKey = "entry_id";
+  //     // Review 테이블 및 속성 명시
+  //     const review_table = Review_Table_Info.table;
+  //     const review_attribute = Review_Table_Info.attribute;
+  //     const review_pKey = "entry_id";
 
-      // Query 명시. (Review 존재 확인용 Select Query)
-      const review_select_query = `SELECT ${review_pKey} FROM ${review_table} WHERE ${review_pKey} = ${parseEnteyID}`;
+  //     // Query 명시. (Review 존재 확인용 Select Query)
+  //     const review_select_query = `SELECT ${review_pKey} FROM ${review_table} WHERE ${review_pKey} = ${parseEnteyID}`;
 
-      // Select Query
-      connection_KK.query(review_select_query, [], (err, data) => {
-        if (err) {
-          console.log("Review_Log DB Select Fail!");
-          console.log("Err sqlMessage: " + err.sqlMessage);
-        } else {
-          // entry_id에 해당되는 Review가 있을 경우
-          if (data[0]) {
-            // Review 갱신용 Update Query
-            const review_update_query = `UPDATE ${review_table} SET ${review_attribute.attr2} = ? WHERE ${review_pKey} = ?`;
-            const review_update_value = [parseContent, parseEnteyID];
-            // Update Query
-            connection_KK.query(
-              review_update_query,
-              review_update_value,
-              (err) => {
-                if (err) {
-                  console.log("Review_Log DB Update Fail!");
-                  console.log("Err sqlMessage: " + err.sqlMessage);
-                } else {
-                  console.log("Review_Log DB Update Success!");
-                  res
-                    .status(200)
-                    .json({ message: "Review_Log DB Update Success!" });
-                }
-              }
-            );
-          }
-          // entry_id에 해당되는 Review가 없을 경우
-          else {
-            console.log("Review_Log DB Non Review!");
-            res.status(400).json({ message: "Review_Log DB Non Review!" });
-          }
-        }
-      });
-    } catch (err) {
-      console.log(err);
-      res.status(500).json({ message: "Server Error - 500" });
-    }
-  },
+  //     // Select Query
+  //     connection_KK.query(review_select_query, [], (err, data) => {
+  //       if (err) {
+  //         console.log("Review_Log DB Select Fail!");
+  //         console.log("Err sqlMessage: " + err.sqlMessage);
+  //       } else {
+  //         // entry_id에 해당되는 Review가 있을 경우
+  //         if (data[0]) {
+  //           // Review 갱신용 Update Query
+  //           const review_update_query = `UPDATE ${review_table} SET ${review_attribute.attr2} = ? WHERE ${review_pKey} = ?`;
+  //           const review_update_value = [parseContent, parseEnteyID];
+  //           // Update Query
+  //           connection_KK.query(
+  //             review_update_query,
+  //             review_update_value,
+  //             (err) => {
+  //               if (err) {
+  //                 console.log("Review_Log DB Update Fail!");
+  //                 console.log("Err sqlMessage: " + err.sqlMessage);
+  //               } else {
+  //                 console.log("Review_Log DB Update Success!");
+  //                 res
+  //                   .status(200)
+  //                   .json({ message: "Review_Log DB Update Success!" });
+  //               }
+  //             }
+  //           );
+  //         }
+  //         // entry_id에 해당되는 Review가 없을 경우
+  //         else {
+  //           console.log("Review_Log DB Non Review!");
+  //           res.status(400).json({ message: "Review_Log DB Non Review!" });
+  //         }
+  //       }
+  //     });
+  //   } catch (err) {
+  //     console.log(err);
+  //     res.status(500).json({ message: "Server Error - 500" });
+  //   }
+  // },
   // Directory DELETE
   deleteDirectoryDataDelete: async (req, res) => {
     // console.log("KK Directory DELETE API 호출");
@@ -554,12 +591,12 @@ const directoryController = {
         // form 값이 video가 아닌 경우
         if (form !== "video")
           await drive.files.delete({ fileId: select_data[0].kk_file_data_id });
-        console.log("drive data delete complete");
+        // console.log("drive data delete complete");
       }
       // 폴더인 경우
       else if (type === "directory") {
         const itemsToDelete = await getSubDirectoriesAndFiles(directoryIdx);
-        // form 값이 video가 아닌 경우
+        // Google Drive 파일 삭제
         if (form !== "video") {
           for (const item of itemsToDelete) {
             if (item.kk_directory_type === "file" && item.files) {
