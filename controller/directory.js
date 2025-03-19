@@ -2,10 +2,7 @@ const stream = require("stream");
 const util = require("util");
 // MySQL 접근
 const mysql = require("mysql");
-const { dbconfig_ai, dbconfig_kk } = require("../DB/database");
-// AI DB 연결
-// const connection_AI = mysql.createConnection(dbconfig_ai);
-// connection_AI.connect();
+const { dbconfig_kk } = require("../DB/database");
 
 // 키클 DB 연결
 const connection_KK = mysql.createConnection(dbconfig_kk);
@@ -14,26 +11,22 @@ connection_KK.connect();
 // 쿼리 실행을 Promise로 변환
 const query = util.promisify(connection_KK.query).bind(connection_KK);
 
-// const { Review_Table_Info } = require("../DB/database_table_info");
-
-// 구글 권한 관련
+// Google API 라이브러리
 const { google } = require("googleapis");
-
-// google OAuth2Client 설정
-
-// GCP IAM 서비스 계정 인증
+// GCP IAM 서비스 계정 인증 정보 설정
 const serviceAccount = {
   private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, "\n"),
   client_email: process.env.GOOGLE_CLIENT_EMAIL, // GCP IAM 계정 Email
   project_id: process.env.GOOGLE_PROJECT_ID, // GCP Project ID
 };
-
+// Google API 접근을 위한 JWT 생성
 const auth_google_drive = new google.auth.JWT({
   email: serviceAccount.client_email,
   key: serviceAccount.private_key,
-  scopes: ["https://www.googleapis.com/auth/drive"], // 사용 영역 설정(Google Drive API 전체)
+  // Google Drive API 전체 접근 권한 요청
+  scopes: ["https://www.googleapis.com/auth/drive"],
 });
-
+// Google Drive API 조작 객체 생성
 const drive = google.drive({ version: "v3", auth: auth_google_drive });
 
 // google drive 파일 전체 조회 메서드
@@ -295,12 +288,14 @@ const directoryController = {
               )?.kk_file_path
             : null,
       }));
-
       // console.log(formattedData);
       return res.status(200).json({ directories: formattedData });
-    } catch (error) {
-      console.log(error);
-      return res.status(500).json({ error: "Internal Server Error" });
+    } catch (err) {
+      delete err.headers;
+      console.error(err);
+      return res.status(500).json({
+        message: `Server Error : ${err.message}`,
+      });
     }
   },
   // Directory Music,Class File CREATE
