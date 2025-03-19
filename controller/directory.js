@@ -257,7 +257,7 @@ const directoryController = {
         connection_KK,
         `SELECT
         kk_directory_idx,
-        ${adminForm && "kk_directory_parent_idx,"}
+        ${adminForm ? "kk_directory_parent_idx," : ""}
         kk_directory_name,
         kk_directory_type
         FROM kk_directory
