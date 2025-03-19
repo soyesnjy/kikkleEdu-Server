@@ -247,28 +247,6 @@ const getSubDirectoriesAndFiles = async (parentId) => {
 };
 
 const directoryController = {
-  // (구) Directory READ - form 해당되는 모든 데이터 반환
-  // getDirectoryDataRead: async (req, res) => {
-  //   const { form } = req.query; // music, video, class
-  //   try {
-  //     // 폴더정보 조회
-  //     const directories = await fetchUserData(
-  //       connection_KK,
-  //       `SELECT * FROM kk_directory WHERE kk_directory_form = '${form}'`
-  //     );
-  //     // 파일정보 조회
-  //     const tracks = await fetchUserData(
-  //       connection_KK,
-  //       `SELECT * FROM kk_file WHERE kk_file_form = '${form}' ORDER BY kk_file_name ASC`
-  //     );
-  //     // console.log({ directories, tracks }); // 로그
-  //     return res.status(200).json({ directories, tracks });
-  //   } catch (error) {
-  //     console.log(error);
-  //     return res.status(500).json({ error: "Internal Server Error" });
-  //   }
-  // },
-
   // (New) Directory READ - form + parentIdx 해당되는 데이터만 반환
   getDirectoryDataRead: async (req, res) => {
     const { form, parentIdx, adminForm } = req.query; // 특정 부모 디렉토리를 기준으로 조회
@@ -277,11 +255,19 @@ const directoryController = {
       // 특정 폴더의 하위 디렉토리 조회
       const directories = await fetchUserData(
         connection_KK,
-        `SELECT * FROM kk_directory WHERE kk_directory_form = '${form}'
+        `SELECT
+        kk_directory_idx,
+        ${adminForm && "kk_directory_parent_idx,"}
+        kk_directory_name,
+        kk_directory_type
+        FROM kk_directory
+        WHERE kk_directory_form = '${form}'
         ${
+          // AdminPage => All Data Response
           adminForm
             ? ""
-            : parentIdx
+            : // TeacherMyPage => parentIdx Directory Data Response
+            parentIdx
             ? `AND kk_directory_parent_idx = ${parentIdx}`
             : "AND kk_directory_parent_idx IS NULL"
         }
@@ -290,19 +276,33 @@ const directoryController = {
       // 해당 폴더의 파일 조회
       const tracks = await fetchUserData(
         connection_KK,
-        `SELECT * FROM kk_file WHERE kk_directory_idx IN (${
+        `SELECT 
+        kk_directory_idx,
+        kk_file_path
+        FROM kk_file
+        WHERE kk_directory_idx IN (${
           directories.map((dir) => dir.kk_directory_idx).join(",") || "NULL"
         })`
       );
 
-      // console.log(tracks);
-      return res.status(200).json({ directories, tracks });
+      const formattedData = directories.map((dir) => ({
+        ...dir,
+        // 파일인 경우 url 속성 추가
+        url:
+          dir.kk_directory_type === "file"
+            ? tracks.find(
+                (track) => track.kk_directory_idx === dir.kk_directory_idx
+              )?.kk_file_path
+            : null,
+      }));
+
+      // console.log(formattedData);
+      return res.status(200).json({ directories: formattedData });
     } catch (error) {
       console.log(error);
       return res.status(500).json({ error: "Internal Server Error" });
     }
   },
-
   // Directory Music,Class File CREATE
   postDirectoryDataCreate: async (req, res) => {
     // console.log("KK Directory CREATE API 호출");
@@ -391,65 +391,6 @@ const directoryController = {
       res.status(500).send(error.message);
     }
   },
-  // // (구) Video File CREATE
-  // postDirectoryVideoFileDataCreate: async (req, res) => {
-  //   // console.log("KK Video File CREATE API 호출");
-  //   const file = req.file;
-  //   const { form, directoryId, fileName } = req.body;
-  //   try {
-  //     if (!file) {
-  //       return res.status(400).json({ message: "업로드된 파일이 없습니다." });
-  //     }
-
-  //     // Google Drive에 파일 업로드
-  //     const uploadedFile = await fileVideoDriveSave(
-  //       file,
-  //       file.originalname,
-  //       file.mimetype
-  //     );
-
-  //     // iframe 미리보기용 링크
-  //     const fileUrl = `https://drive.google.com/file/d/${uploadedFile.id}/preview`;
-
-  //     // DB 저장
-  //     connection_KK.query(
-  //       "INSERT INTO kk_directory (kk_directory_name, kk_directory_parent_idx, kk_directory_type, kk_directory_form) VALUES (?, ?, ?, ?)",
-  //       [fileName, directoryId, "file", form],
-  //       (error, results) => {
-  //         if (error) {
-  //           console.error(error.sqlMessage);
-  //           return res
-  //             .status(400)
-  //             .json({ message: "kk_directory INSERT Error" });
-  //         }
-  //         const fileId = results.insertId;
-
-  //         connection_KK.query(
-  //           "INSERT INTO kk_file (kk_directory_idx, kk_file_path, kk_file_name, kk_file_data_id, kk_file_form) VALUES (?, ?, ?, ?, ?)",
-  //           [fileId, fileUrl, fileName, uploadedFile.id, form],
-  //           (error) => {
-  //             if (error) {
-  //               console.error("Database error:", error);
-  //               return res
-  //                 .status(400)
-  //                 .json({ message: "kk_file INSERT Error" });
-  //             }
-  //             return res.status(200).json({
-  //               id: fileId,
-  //               name: fileName,
-  //               parent_id: directoryId,
-  //               type: "file",
-  //               url: fileUrl,
-  //             });
-  //           }
-  //         );
-  //       }
-  //     );
-  //   } catch (error) {
-  //     console.log(error);
-  //     res.status(500).send(error.message);
-  //   }
-  // },
   // Video File CREATE V2
   postDirectoryVideoFileDataCreateV2: async (req, res) => {
     // console.log("KK Video File CREATE V2 API 호출");
@@ -504,6 +445,138 @@ const directoryController = {
       res.status(500).send(error.message);
     }
   },
+  // Directory DELETE
+  deleteDirectoryDataDelete: async (req, res) => {
+    // console.log("KK Directory DELETE API 호출");
+    const { directoryIdx, type, form } = req.query;
+    try {
+      // Drive Data Delete
+      // 파일인 경우
+      if (type === "file") {
+        const select_data = await query(
+          `SELECT kk_file_data_id
+           FROM kk_file 
+           WHERE kk_directory_idx = ?`,
+          [directoryIdx]
+        );
+        // form 값이 video가 아닌 경우
+        if (form !== "video")
+          await drive.files.delete({ fileId: select_data[0].kk_file_data_id });
+        // console.log("drive data delete complete");
+      }
+      // 폴더인 경우
+      else if (type === "directory") {
+        const itemsToDelete = await getSubDirectoriesAndFiles(directoryIdx);
+        // Google Drive 파일 삭제
+        if (form !== "video") {
+          for (const item of itemsToDelete) {
+            if (item.kk_directory_type === "file" && item.files) {
+              for (const fileId of item.files) {
+                await drive.files.delete({ fileId: fileId });
+              }
+            }
+          }
+        }
+      }
+
+      // DB Table Data Delete
+      const delete_query = `DELETE FROM kk_directory WHERE kk_directory_idx = ?`;
+      connection_KK.query(delete_query, [directoryIdx], async (err) => {
+        if (err) {
+          console.log(err);
+          return res.status(400).json({ message: err.sqlMessage });
+        }
+        // await drive.files.delete({ fileId: file.id });
+
+        // console.log("Directory DB Delete Success!");
+        return res
+          .status(200)
+          .json({ message: "Directory DB Delete Success!" });
+      });
+    } catch (err) {
+      console.log(err);
+      res.status(500).json({ message: "Server Error - 500" });
+    }
+  },
+
+  // (구) Directory READ - form 해당되는 모든 데이터 반환
+  // getDirectoryDataRead: async (req, res) => {
+  //   const { form } = req.query; // music, video, class
+  //   try {
+  //     // 폴더정보 조회
+  //     const directories = await fetchUserData(
+  //       connection_KK,
+  //       `SELECT * FROM kk_directory WHERE kk_directory_form = '${form}'`
+  //     );
+  //     // 파일정보 조회
+  //     const tracks = await fetchUserData(
+  //       connection_KK,
+  //       `SELECT * FROM kk_file WHERE kk_file_form = '${form}' ORDER BY kk_file_name ASC`
+  //     );
+  //     // console.log({ directories, tracks }); // 로그
+  //     return res.status(200).json({ directories, tracks });
+  //   } catch (error) {
+  //     console.log(error);
+  //     return res.status(500).json({ error: "Internal Server Error" });
+  //   }
+  // },
+
+  // // (구) Video File CREATE
+  // postDirectoryVideoFileDataCreate: async (req, res) => {
+  //   // console.log("KK Video File CREATE API 호출");
+  //   const file = req.file;
+  //   const { form, directoryId, fileName } = req.body;
+  //   try {
+  //     if (!file) {
+  //       return res.status(400).json({ message: "업로드된 파일이 없습니다." });
+  //     }
+  //     // Google Drive에 파일 업로드
+  //     const uploadedFile = await fileVideoDriveSave(
+  //       file,
+  //       file.originalname,
+  //       file.mimetype
+  //     );
+  //     // iframe 미리보기용 링크
+  //     const fileUrl = `https://drive.google.com/file/d/${uploadedFile.id}/preview`;
+  //     // DB 저장
+  //     connection_KK.query(
+  //       "INSERT INTO kk_directory (kk_directory_name, kk_directory_parent_idx, kk_directory_type, kk_directory_form) VALUES (?, ?, ?, ?)",
+  //       [fileName, directoryId, "file", form],
+  //       (error, results) => {
+  //         if (error) {
+  //           console.error(error.sqlMessage);
+  //           return res
+  //             .status(400)
+  //             .json({ message: "kk_directory INSERT Error" });
+  //         }
+  //         const fileId = results.insertId;
+  //         connection_KK.query(
+  //           "INSERT INTO kk_file (kk_directory_idx, kk_file_path, kk_file_name, kk_file_data_id, kk_file_form) VALUES (?, ?, ?, ?, ?)",
+  //           [fileId, fileUrl, fileName, uploadedFile.id, form],
+  //           (error) => {
+  //             if (error) {
+  //               console.error("Database error:", error);
+  //               return res
+  //                 .status(400)
+  //                 .json({ message: "kk_file INSERT Error" });
+  //             }
+  //             return res.status(200).json({
+  //               id: fileId,
+  //               name: fileName,
+  //               parent_id: directoryId,
+  //               type: "file",
+  //               url: fileUrl,
+  //             });
+  //           }
+  //         );
+  //       }
+  //     );
+  //   } catch (error) {
+  //     console.log(error);
+  //     res.status(500).send(error.message);
+  //   }
+  // },
+
   // // TODO# Directory UPDATE
   // postDirectoryDataUpdate: (req, res) => {
   //   // console.log("ReviewData UPDATE API 호출");
@@ -574,59 +647,6 @@ const directoryController = {
   //     res.status(500).json({ message: "Server Error - 500" });
   //   }
   // },
-  // Directory DELETE
-  deleteDirectoryDataDelete: async (req, res) => {
-    // console.log("KK Directory DELETE API 호출");
-    const { directoryIdx, type, form } = req.query;
-    try {
-      // Drive Data Delete
-      // 파일인 경우
-      if (type === "file") {
-        const select_data = await query(
-          `SELECT kk_file_data_id
-           FROM kk_file 
-           WHERE kk_directory_idx = ?`,
-          [directoryIdx]
-        );
-        // form 값이 video가 아닌 경우
-        if (form !== "video")
-          await drive.files.delete({ fileId: select_data[0].kk_file_data_id });
-        // console.log("drive data delete complete");
-      }
-      // 폴더인 경우
-      else if (type === "directory") {
-        const itemsToDelete = await getSubDirectoriesAndFiles(directoryIdx);
-        // Google Drive 파일 삭제
-        if (form !== "video") {
-          for (const item of itemsToDelete) {
-            if (item.kk_directory_type === "file" && item.files) {
-              for (const fileId of item.files) {
-                await drive.files.delete({ fileId: fileId });
-              }
-            }
-          }
-        }
-      }
-
-      // DB Table Data Delete
-      const delete_query = `DELETE FROM kk_directory WHERE kk_directory_idx = ?`;
-      connection_KK.query(delete_query, [directoryIdx], async (err) => {
-        if (err) {
-          console.log(err);
-          return res.status(400).json({ message: err.sqlMessage });
-        }
-        // await drive.files.delete({ fileId: file.id });
-
-        // console.log("Directory DB Delete Success!");
-        return res
-          .status(200)
-          .json({ message: "Directory DB Delete Success!" });
-      });
-    } catch (err) {
-      console.log(err);
-      res.status(500).json({ message: "Server Error - 500" });
-    }
-  },
 };
 
 module.exports = {
