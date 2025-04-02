@@ -139,7 +139,7 @@ const fileCloudinarySave = async (fileData, oldPublicId) => {
     const { fileName, fileType, baseData } = fileData;
     const [_, zipBase64] = baseData.split(",");
     const buffer = Buffer.from(zipBase64, "base64");
-    console.log(oldPublicId);
+    // console.log(oldPublicId);
     // 기존 이미지 삭제
     if (oldPublicId) {
       try {
