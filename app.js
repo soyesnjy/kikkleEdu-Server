@@ -30,6 +30,7 @@ app.use(
       "https://www.soyeskids.store",
       "http://localhost:3000",
       "http://localhost:3001",
+      "http://localhost:3002",
       "https://www.kikle.kr",
       "https://kikle.kr",
       "https://soyeskids.shop",
@@ -124,17 +125,17 @@ morgan.token("req-body", (req) => {
 });
 // app.use(morgan(":method :url :status :response-time ms - Req Body: :req-body"));
 // GET 요청을 제외한 조건부 로깅 미들웨어
-app.use((req, res, next) => {
-  if (req.method !== "GET") {
-    morgan(":method :url :status :response-time ms - Req Body: :req-body")(
-      req,
-      res,
-      next
-    );
-  } else {
-    next(); // GET 요청은 morgan 실행 없이 다음 미들웨어로 이동
-  }
-});
+// app.use((req, res, next) => {
+//   if (req.method !== "GET") {
+//     morgan(":method :url :status :response-time ms - Req Body: :req-body")(
+//       req,
+//       res,
+//       next
+//     );
+//   } else {
+//     next(); // GET 요청은 morgan 실행 없이 다음 미들웨어로 이동
+//   }
+// });
 
 app.get("/kikle", (req, res) => {
   // jenkins 배포 테스트용 주석5

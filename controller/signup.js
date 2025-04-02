@@ -3,32 +3,40 @@ const stream = require("stream");
 
 // MySQL 접근
 const mysql = require("mysql");
-const { dbconfig, dbconfig_ai, dbconfig_kk } = require("../DB/database");
+const {
+  // dbconfig_ai,
+  dbconfig_kk,
+} = require("../DB/database");
 
-// AI DB 연결
-const connection_AI = mysql.createConnection(dbconfig_ai);
-connection_AI.connect();
 // 키클 DB 연결
 const connection_KK = mysql.createConnection(dbconfig_kk);
 connection_KK.connect();
+// AI DB 연결
+// const connection_AI = mysql.createConnection(dbconfig_ai);
+// connection_AI.connect();
 
 // 구글 권한 관련
 const { google } = require("googleapis");
-
 // GCP IAM 서비스 계정 인증
 const serviceAccount = {
   private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, "\n"),
   client_email: process.env.GOOGLE_CLIENT_EMAIL,
   project_id: process.env.GOOGLE_PROJECT_ID,
 };
-
 const auth_google_drive = new google.auth.JWT({
   email: serviceAccount.client_email,
   key: serviceAccount.private_key,
   scopes: ["https://www.googleapis.com/auth/drive"],
 });
-
 const drive = google.drive({ version: "v3", auth: auth_google_drive });
+
+// Cloudinary 설정
+const { v2: cloudinary } = require("cloudinary");
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 // Database Table Info
 const { KK_User_Table_Info } = require("../DB/database_table_info");
@@ -66,10 +74,16 @@ async function fetchUserData(connection, query) {
 const fileDriveSave = async (fileData) => {
   try {
     // 첨부파일 Google Drive 저장
+    // const { fileName, fileType, baseData } = fileData;
+    // const [_, zipBase64] = baseData.split(",");
+    // const bufferStream = new stream.PassThrough();
+    // bufferStream.end(Buffer.from(zipBase64, "base64"));
+
     const { fileName, fileType, baseData } = fileData;
-    const [baseType, zipBase64] = baseData.split(",");
+    const [_, zipBase64] = baseData.split(",");
+    const buffer = Buffer.from(zipBase64, "base64");
     const bufferStream = new stream.PassThrough();
-    bufferStream.end(Buffer.from(zipBase64, "base64"));
+    bufferStream.end(buffer);
 
     const fileMetadata = {
       name: fileName,
@@ -112,12 +126,127 @@ const fileDriveSave = async (fileData) => {
       fileId: file.data.id,
       fields: "id, webViewLink, webContentLink",
     });
+
     return uploadFile;
   } catch (err) {
     console.log(err);
     return;
   }
 };
+
+const fileCloudinarySave = async (fileData, oldPublicId) => {
+  try {
+    const { fileName, fileType, baseData } = fileData;
+    const [_, zipBase64] = baseData.split(",");
+    const buffer = Buffer.from(zipBase64, "base64");
+
+    // 기존 이미지 삭제
+    if (oldPublicId) {
+      try {
+        await cloudinary.uploader.destroy(oldPublicId, {
+          resource_type: "image",
+        });
+        console.log(`기존 이미지 삭제됨: ${oldPublicId}`);
+      } catch (deleteErr) {
+        console.error(
+          `기존 이미지 삭제 실패: ${oldPublicId}`,
+          deleteErr.message
+        );
+      }
+    }
+
+    // 새 이미지 업로드
+    const cloudinaryUpload = await new Promise((resolve, reject) => {
+      const cloudinaryStream = cloudinary.uploader.upload_stream(
+        {
+          folder: "kikleEdu-teacher-profiles",
+          public_id: fileName.split(".")[0],
+          resource_type: "image",
+        },
+        (error, result) => {
+          if (error) return reject(error);
+          resolve(result);
+        }
+      );
+      stream.Readable.from(buffer).pipe(cloudinaryStream);
+    });
+
+    return cloudinaryUpload.secure_url;
+  } catch (err) {
+    console.log("Cloudinary 업로드 실패:", err);
+    return;
+  }
+};
+
+const extractPublicId = (secureUrl) => {
+  const match = secureUrl.match(/\/upload\/(?:v\d+\/)?(.+)\.[a-zA-Z]+$/);
+  return match ? match[1] : null; // 예: folder/file-name
+};
+
+// Cloudinary 업로드 후 DB 업데이트를 위한 마이그레이션 메서드
+async function migrateGoogleDriveToCloudinary() {
+  try {
+    // Google Drive URL 형태로 저장된 이미지만 선택
+    const querySelect = `
+      SELECT kk_teacher_idx, kk_teacher_profileImg_path
+      FROM kk_teacher
+      WHERE kk_teacher_profileImg_path LIKE ?
+    `;
+    const likePattern = "https://drive.google.com/uc?export=view&id=%";
+
+    connection_KK.query(querySelect, [likePattern], async (err, results) => {
+      if (err) {
+        console.error("DB select error:", err);
+        return;
+      }
+      for (const row of results) {
+        const teacherId = row.kk_teacher_idx;
+        const googleUrl = row.kk_teacher_profileImg_path;
+
+        try {
+          // Cloudinary에 외부 URL 업로드
+          const result = await cloudinary.uploader.upload(googleUrl, {
+            folder: "kikleEdu-teacher-profiles", // 원하는 폴더명
+            public_id: `teacher_${teacherId}`, // 고유한 이름 부여 (확장자 자동 처리)
+            resource_type: "image",
+          });
+          const newUrl = result.secure_url;
+          console.log(`Teacher ${teacherId}: Cloudinary URL = ${newUrl}`);
+
+          // DB 업데이트: kk_teacher_profileImg_path 값을 Cloudinary URL로 변경
+          const queryUpdate = `
+            UPDATE kk_teacher
+            SET kk_teacher_profileImg_path = ?
+            WHERE kk_teacher_idx = ?
+          `;
+          connection_KK.query(
+            queryUpdate,
+            [newUrl, teacherId],
+            (updateErr, updateResult) => {
+              if (updateErr) {
+                console.error(
+                  `DB update error for teacher ${teacherId}:`,
+                  updateErr
+                );
+              } else {
+                console.log(`Teacher ${teacherId} updated successfully.`);
+              }
+            }
+          );
+        } catch (uploadError) {
+          console.error(
+            `Cloudinary upload error for teacher ${teacherId}:`,
+            uploadError
+          );
+        }
+      }
+    });
+  } catch (error) {
+    console.error("Migration error:", error);
+  }
+}
+// 실행
+// migrateGoogleDriveToCloudinary();
 
 // 희망 요일 정렬 메서드
 const sortDays = (arr) => {
@@ -456,7 +585,8 @@ const signupController = {
     const { SignUpData } = req.body;
     // console.log(SignUpData);
 
-    let parseSignUpData;
+    let parseSignUpData,
+      oldPublicId = null;
     try {
       // 입력값 파싱
       if (typeof SignUpData === "string") {
@@ -500,9 +630,20 @@ const signupController = {
 
       // 강사
       if (userClass === "teacher") {
+        // 프로필 이미지가 있는지 조회
+        const query = `SELECT kk_teacher_profileImg_path FROM ${user_table} WHERE kk_teacher_idx = ?`;
+        const result = await queryAsync(connection_KK, query, [userIdx]);
+        const userRow = result?.[0]; // 한 줄만 추출
+
+        const existingUrl = userRow?.[0]?.kk_teacher_profileImg_path;
+
+        if (existingUrl?.includes("res.cloudinary.com")) {
+          oldPublicId = extractPublicId(existingUrl);
+        }
+
         // Public URL을 가져오기 위해 파일 정보를 다시 가져옴
-        let uploadFile = "";
-        if (fileData) uploadFile = await fileDriveSave(fileData);
+        let uploadImageUrl = "";
+        if (fileData) uploadImageUrl = await fileCloudinarySave(fileData);
 
         const update_query = `UPDATE ${user_table} SET
         kk_teacher_introduction = ?,
@@ -523,8 +664,8 @@ const signupController = {
           attr3: introduce, // 강사 소개글 (관리자)
           attr4: name,
           attr5: phoneNum,
-          ...(uploadFile && {
-            attr6: `https://drive.google.com/uc?export=view&id=${uploadFile.data.id}`,
+          ...(uploadImageUrl && {
+            attr6: uploadImageUrl,
           }), // 강사 프로필 사진 (관리자)
           attr7: location,
           ...(possDay && {
