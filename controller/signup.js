@@ -139,7 +139,7 @@ const fileCloudinarySave = async (fileData, oldPublicId) => {
     const { fileName, fileType, baseData } = fileData;
     const [_, zipBase64] = baseData.split(",");
     const buffer = Buffer.from(zipBase64, "base64");
-
+    console.log(oldPublicId);
     // 기존 이미지 삭제
     if (oldPublicId) {
       try {
@@ -634,8 +634,7 @@ const signupController = {
         const query = `SELECT kk_teacher_profileImg_path FROM ${user_table} WHERE kk_teacher_idx = ?`;
         const result = await queryAsync(connection_KK, query, [userIdx]);
         const userRow = result?.[0]; // 한 줄만 추출
-
-        const existingUrl = userRow?.[0]?.kk_teacher_profileImg_path;
+        const existingUrl = userRow?.kk_teacher_profileImg_path;
 
         if (existingUrl?.includes("res.cloudinary.com")) {
           oldPublicId = extractPublicId(existingUrl);
@@ -643,7 +642,8 @@ const signupController = {
 
         // Public URL을 가져오기 위해 파일 정보를 다시 가져옴
         let uploadImageUrl = "";
-        if (fileData) uploadImageUrl = await fileCloudinarySave(fileData);
+        if (fileData)
+          uploadImageUrl = await fileCloudinarySave(fileData, oldPublicId);
 
         const update_query = `UPDATE ${user_table} SET
         kk_teacher_introduction = ?,
